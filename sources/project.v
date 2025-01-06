@@ -98,6 +98,12 @@ endmodule
 module FSM(input clock, input reset, input [2:0] product_address, output reg [15:0] price);
 
     reg [15:0] price_0, price_1, price_2, price_3, price_4, price_5, price_6, price_7;
+    wire [15:0] discounted_price;
+    
+    applyDiscount discount_system (
+        .amount(price),   // قیمت محصول
+        .discounted_amount(discounted_price)  // قیمت تخفیف‌شده
+    );
     
     initial 
     begin
@@ -132,6 +138,11 @@ module FSM(input clock, input reset, input [2:0] product_address, output reg [15
             endcase
         end
     end
+    
+    always @(price) 
+    begin
+        price <= discounted_price;
+    end
 
 endmodule
 
@@ -142,6 +153,82 @@ module ProductSelector(input clock, input reset, input [2:0] address, output [15
 
     decoderSelector decoder (.address(address), .selectors(select), .product_address(product_address));
     FSM fsm (.clock(clock), .reset(reset), .product_address(product_address), .price(price));
+
+endmodule
+
+module Comparator(input [7:0] num_products, output reg discount_flag);
+    always @(*) begin
+        if (num_products > 8'd10) 
+            discount_flag = 1;
+        else 
+            discount_flag = 0;
+    end
+endmodule
+
+
+module Multiplier16x16(input [15:0] A, input [15:0] B, output [31:0] Product);
+
+    // P is Partial Product
+    wire [15:0] P[15:0]; 
+    wire [31:0] Sum[15:0];
+
+    // Calculate Partial Products
+    genvar i;
+    generate
+        for (i = 0; i < 16; i = i + 1) begin
+            assign P[i] = A & {16{B[i]}}; // AND each bit of B with A
+        end
+    endgenerate
+
+    // Shift and sum the partial products
+    generate
+        for (i = 0; i < 16; i = i + 1) begin
+            assign Sum[i] = {{16-i{1'b0}}, P[i], {i{1'b0}}}; // Adjusted for proper shifting
+        end
+    endgenerate
+
+    reg [31:0] temp_product;
+    integer j;  // Use integer instead of genvar for the loop in always block
+
+    always @(*) begin
+        temp_product = 32'b0;
+
+        // Loop through Sum array and accumulate the results
+        for (j = 0; j < 16; j = j + 1) begin
+            temp_product = temp_product + Sum[j];
+        end
+    end
+
+    assign Product = temp_product;
+
+endmodule
+
+module applyDiscount (input [15:0] amount, output [15:0] discounted_amount);
+
+    wire [31:0] product;
+    wire [31:0] shifted_result;
+    reg [15:0] final_amount;
+
+    Multiplier16x16 multiplier (
+        .A(amount),
+        .B(16'd9),
+        .Product(product)
+    );
+
+    // Devide by 16 with shift to right
+    assign shifted_result = product >> 4;
+
+    
+    always @(*) begin
+
+        // Cilling
+        if (product[3:0] != 4'b0000)
+            final_amount = shifted_result + 1;
+        else
+            final_amount = shifted_result;
+    end
+
+    assign discounted_amount = final_amount;
 
 endmodule
 
@@ -231,10 +318,3 @@ module testBench;
     end
 
 endmodule
-
-
-
-
-
-
-
