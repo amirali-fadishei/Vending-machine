@@ -233,9 +233,60 @@ module testBench;
 
 endmodule
 
+module Multiplier16x16(input [15:0] A, input [15:0] B, output [31:0] Product);
 
+    // P is Partial Product
+    wire [15:0] P[15:0]; 
+    wire [31:0] Sum[15:0];
 
+    // Calculate Partial Products
+    genvar i;
+    generate
+        for (i = 0; i < 16; i = i + 1) begin
+            assign P[i] = A & {16{B[i]}}; // AND each bit of B with A
+        end
+    endgenerate
+    
+    // Shift and sum the partial products
+    genvar j;
+    generate
+        for (i = 0, j = 16; i < 16; i = i + 1, j = j - 1) begin
+            assign Sum[i] = {{j{1'b0}}, P[i], {i{1'b0}}};
+        end
+    endgenerate
 
+    // THE ABOVE LOOP DO THIS
+    // assign Sum[0] = {16'b0, P[0]}; // P[0]
+    // assign Sum[1] = {15'b0, P[1], 1'b0}; // P[1] shifted left by 1
+    // assign Sum[2] = {14'b0, P[2], 2'b0}; // P[2] shifted left by 2
+    // assign Sum[3] = {13'b0, P[3], 3'b0}; // P[3] shifted left by 3
+    // assign Sum[4] = {12'b0, P[4], 4'b0}; // P[4] shifted left by 4
+    // assign Sum[5] = {11'b0, P[5], 5'b0}; // P[5] shifted left by 5
+    // assign Sum[6] = {10'b0, P[6], 6'b0}; // P[6] shifted left by 6
+    // assign Sum[7] = {9'b0, P[7], 7'b0};  // P[7] shifted left by 7
+    // assign Sum[8] = {8'b0, P[8], 8'b0};  // P[8] shifted left by 8
+    // assign Sum[9] = {7'b0, P[9], 9'b0};  // P[9] shifted left by 9
+    // assign Sum[10] = {6'b0, P[10], 10'b0}; // P[10] shifted left by 10
+    // assign Sum[11] = {5'b0, P[11], 11'b0}; // P[11] shifted left by 11
+    // assign Sum[12] = {4'b0, P[12], 12'b0}; // P[12] shifted left by 12
+    // assign Sum[13] = {3'b0, P[13], 13'b0}; // P[13] shifted left by 13
+    // assign Sum[14] = {2'b0, P[14], 14'b0}; // P[14] shifted left by 14
+    // assign Sum[15] = {1'b0, P[15], 15'b0}; // P[15] shifted left by 15
 
+    // Final summation
+    generate
+        reg [31:0] temp_product;
+        
+        always @(*) 
+        begin
+            temp_product = 32'b0;
 
+            for (i = 0; i < 16; i = i + 1) begin
+                temp_product = temp_product + Sum[i];
+            end
+        end
+    endgenerate
 
+    assign Product = temp_product;
+
+endmodule
