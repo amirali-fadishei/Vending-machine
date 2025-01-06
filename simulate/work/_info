@@ -22,50 +22,98 @@ n@_opt
 Z4 OL;O;2020.4;71
 R0
 T_opt1
-!s110 1736092456
-VHiOlXb`CR7eO0@YAoYJ^R3
+!s110 1736180731
+VGPoOSnoJeLII=;]H4U4Bn1
 R1
-=1-346f24e4b385-677aab27-376-2810
+=1-346f24e4b385-677c03fa-358-2d94
 R2
 R3
 n@_opt1
 R4
 vCounter
-Z5 !s110 1736092446
+Z5 !s110 1736180717
 !i10b 1
 !s100 ODR?aZm_^bVbHzmZQa0XX0
 Z6 !s11b Dg1SIo80bB@j0V0VzS_@n1
 IA27^G:`TzVON]bG>h4K]`0
 Z7 dC:/Users/amira/Desktop/Vending machine/simulate
-Z8 w1736092423
+Z8 w1736180689
 Z9 8C:/Users/amira/Desktop/Vending machine/sources/project.v
 Z10 FC:/Users/amira/Desktop/Vending machine/sources/project.v
-!i122 2
+!i122 4
 L0 1 15
 Z11 VDg1SIo80bB@j0V0VzS_@n1
 Z12 OL;L;2020.4;71
 r1
 !s85 0
 31
-Z13 !s108 1736092446.000000
+Z13 !s108 1736180717.000000
 Z14 !s107 C:/Users/amira/Desktop/Vending machine/sources/project.v|
 Z15 !s90 -reportprogress|300|-work|work|-vopt|-stats=none|C:/Users/amira/Desktop/Vending machine/sources/project.v|
 !i113 0
 Z16 o-work work -L mtiAvm -L mtiRnm -L mtiOvm -L mtiUvm -L mtiUPF -L infact
 R3
 n@counter
-vMoneyInput
+vdecoderSelector
 R5
 !i10b 1
-!s100 <MAoSbLBDHHNI8H^GAz`m2
+!s100 To0b;cIIW9QFMIiDDfZP[1
 R6
-IJQ43alWNVldTc]:6bBzMB3
+IJ2zHZ2n1W3S>mIMj9]UCz1
 R7
 R8
 R9
 R10
-!i122 2
-L0 18 59
+!i122 4
+L0 78 19
+R11
+R12
+r1
+!s85 0
+31
+R13
+R14
+R15
+!i113 0
+R16
+R3
+ndecoder@selector
+vFSM
+R5
+!i10b 1
+!s100 AbcNbWC<n_d=IEZmR83UA2
+R6
+IG6Jilg_>TFTMD2AX42d6`2
+R7
+R8
+R9
+R10
+!i122 4
+L0 98 39
+R11
+R12
+r1
+!s85 0
+31
+R13
+R14
+R15
+!i113 0
+R16
+R3
+n@f@s@m
+vMoneyInput
+R5
+!i10b 1
+!s100 h9ZCZjFaJD7GCeZAh[>GP1
+R6
+I?l]U59O]oDaYEmGG53i0e0
+R7
+R8
+R9
+R10
+!i122 4
+L0 17 60
 R11
 R12
 r1
@@ -78,16 +126,40 @@ R15
 R16
 R3
 n@money@input
-vtb_MoneyInput
+vProductSelector
 R5
+!i10b 1
+!s100 m;Ci2G:;0;26Yf>NYO^[V2
+R6
+IeNPMW3Kc[JA0;:T3o9XJ=2
+R7
+R8
+R9
+R10
+!i122 4
+L0 138 9
+R11
+R12
+r1
+!s85 0
+31
+R13
+R14
+R15
+!i113 0
+R16
+R3
+n@product@selector
+vtb_MoneyInput
+!s110 1736092446
 !i10b 1
 !s100 ]jL2S>ojQhEgR4>RAmZ5<0
 R6
 IK9iI]jUGeTcQQj6bin]V:3
 R7
 w1736092247
-8C:/Users/amira/Desktop/Vending machine/sources/testBench.v
-FC:/Users/amira/Desktop/Vending machine/sources/testBench.v
+Z17 8C:/Users/amira/Desktop/Vending machine/sources/testBench.v
+Z18 FC:/Users/amira/Desktop/Vending machine/sources/testBench.v
 !i122 3
 L0 1 56
 R11
@@ -95,10 +167,34 @@ R12
 r1
 !s85 0
 31
-R13
-!s107 C:/Users/amira/Desktop/Vending machine/sources/testBench.v|
-!s90 -reportprogress|300|-work|work|-vopt|-stats=none|C:/Users/amira/Desktop/Vending machine/sources/testBench.v|
+!s108 1736092446.000000
+Z19 !s107 C:/Users/amira/Desktop/Vending machine/sources/testBench.v|
+Z20 !s90 -reportprogress|300|-work|work|-vopt|-stats=none|C:/Users/amira/Desktop/Vending machine/sources/testBench.v|
 !i113 0
 R16
 R3
 ntb_@money@input
+vtestBench
+R5
+!i10b 1
+!s100 31NeJ7KkQ@:D4C[7a81=D3
+R6
+IA8k[L<I_@ndR@5Kh1m>Y@1
+R7
+w1736180687
+R17
+R18
+!i122 5
+L0 1 86
+R11
+R12
+r1
+!s85 0
+31
+R13
+R19
+R20
+!i113 0
+R16
+R3
+ntest@bench

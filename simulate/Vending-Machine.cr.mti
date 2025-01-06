@@ -2,15 +2,19 @@
 Model Technology ModelSim SE-64 vlog 2020.4 Compiler 2020.10 Oct 13 2020
 -- Compiling module Counter
 -- Compiling module MoneyInput
+-- Compiling module decoderSelector
+-- Compiling module FSM
+-- Compiling module ProductSelector
 
 Top level modules:
 	MoneyInput
+	ProductSelector
 
 } {} {}} {C:/Users/amira/Desktop/Vending machine/sources/testBench.v} {1 {vlog -work work -vopt -stats=none {C:/Users/amira/Desktop/Vending machine/sources/testBench.v}
 Model Technology ModelSim SE-64 vlog 2020.4 Compiler 2020.10 Oct 13 2020
--- Compiling module tb_MoneyInput
+-- Compiling module testBench
 
 Top level modules:
-	tb_MoneyInput
+	testBench
 
 } {} {}}
