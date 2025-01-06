@@ -44,7 +44,6 @@ module MoneyInput(input clock, input reset, input [3:0] money_type, output reg [
                 begin
                     total <= total + 500;
                     num_500 <= coin_500;
-                    $display("Error: Invalid Money Type!",num_500);
                     error <= 4'b0;
                 end
                 4'b0010: 
