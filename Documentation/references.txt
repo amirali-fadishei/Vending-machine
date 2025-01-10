@@ -1,0 +1,160 @@
+// module vending_machine_tb;
+
+//     // Inputs
+//     reg clk;
+//     reg reset;
+//     reg [1:0] coin;
+//     reg [2:0] product_id;
+//     reg didBuy;
+//     reg money_validation;
+//     reg is_product_selected;
+//     reg is_enough_money;
+//     reg [3:0] product_count;
+//     reg [2:0] feedback;
+
+//     // Outputs
+//     wire [15:0] total;
+//     wire [7:0] product_enable;
+//     wire [7:0] in_stock_amont;
+//     wire low_stock;
+//     wire [1:0] state;
+//     wire [15:0] discounted_amount;
+//     // !! I couldent work with array in verilog !!
+//     wire [2:0] stored_feedback_0;
+//     wire [2:0] stored_feedback_1;
+//     wire [2:0] stored_feedback_2;
+//     wire [2:0] stored_feedback_3;
+//     wire [2:0] stored_feedback_4;
+//     wire [2:0] stored_feedback_5;
+//     wire [2:0] stored_feedback_6;
+//     wire [2:0] stored_feedback_7;
+
+//     // Instantiate the modules
+//     money_counter mc (
+//         .clk(clk),
+//         .reset(reset),
+//         .coin(coin),
+//         .total(total)
+//     );
+
+//     product_enable_generator peg (
+//         .product_id(product_id),
+//         .product_enable(product_enable)
+//     );
+
+//     product_manager pm (
+//         .clk(clk),
+//         .reset(reset),
+//         .product_id(product_id),
+//         .didBuy(didBuy),
+//         .in_stock_amount(in_stock_amont),
+//         .low_stock(low_stock)
+//     );
+
+//     fsm fsm_inst (
+//         .clk(clk),
+//         .reset(reset),
+//         .money_validation(money_validation),
+//         .is_product_selected(is_product_selected),
+//         .is_enough_money(is_enough_money),
+//         .state(state)
+//     );
+
+//     inteligent_discount id (
+//         .real_amount(total),
+//         .product_count(product_count),
+//         .discounted_amount(discounted_amount)
+//     );
+
+//     feedback_storage fs (
+//         .clk(clk),
+//         .reset(reset),
+//         .product_id(product_id),
+//         .feedback(feedback),
+//         .stored_feedback_0(stored_feedback_0),
+//         .stored_feedback_1(stored_feedback_1),
+//         .stored_feedback_2(stored_feedback_2),
+//         .stored_feedback_3(stored_feedback_3),
+//         .stored_feedback_4(stored_feedback_4),
+//         .stored_feedback_5(stored_feedback_5),
+//         .stored_feedback_6(stored_feedback_6),
+//         .stored_feedback_7(stored_feedback_7)
+//     );
+
+//     // Clock generation
+//     always begin
+//         #5 clk = ~clk;  // Generate clock with 10ns period
+//     end
+
+//     // Test procedure
+//     initial begin
+//         // Initialize signals
+//         clk = 0;
+//         reset = 0;
+//         coin = 2'b00; // Insert 500
+//         product_id = 3'b000; // Select product 0
+//         didBuy = 0;
+//         money_validation = 0;
+//         is_product_selected = 0;
+//         is_enough_money = 0;
+//         product_count = 4'd5; // Less than 10 products
+//         feedback = 3'b001; // Feedback rating: 1
+
+//         // Apply reset
+//         reset = 1;
+//         #10;
+//         reset = 0;
+
+//         // Test money counter (insert coins)
+//         coin = 2'b00; // Insert 500
+//         #10;
+//         coin = 2'b01; // Insert 1000
+//         #10;
+//         coin = 2'b10; // Insert 2000
+//         #10;
+//         coin = 2'b11; // Insert 5000
+//         #10;
+
+//         // Check total amount
+//         $display("Total Amount: %d", total);
+
+//         // Test product selection (select product 0)
+//         product_id = 3'b000;
+//         is_product_selected = 1;
+//         #10;
+//         is_product_selected = 0;
+        
+//         // Test if enough money
+//         is_enough_money = 1;
+//         #10;
+//         is_enough_money = 0;
+
+//         // Simulate a purchase (didBuy)
+//         didBuy = 1;
+//         #10;
+//         didBuy = 0;
+
+//         // Check if product is dispensed and stock is updated
+//         $display("Product 0 Stock after purchase: %d", in_stock_amont);
+//         $display("Low Stock: %d", low_stock);
+
+//         // Test discount system
+//         product_count = 4'd15; // More than 10 products for discount
+//         #10;
+//         $display("Discounted Amount: %d", discounted_amount);
+
+//         // Test feedback storage (product 0 gets feedback)
+//         feedback = 3'b011; // Feedback rating: 3
+//         #10;
+//         $display("Stored Feedback for Product 0: %d", stored_feedback_0);
+
+//         // Test FSM state transitions
+//         money_validation = 1;
+//         #10;
+//         $display("FSM State: %b", state); // Check FSM state
+
+//         // End simulation
+//         $finish;
+//     end
+
+// endmodule

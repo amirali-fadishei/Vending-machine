@@ -1,20 +1,42 @@
-module money_counter(input clk, input reset, input [1:0] coin, output reg [15:0] total);
+module Counter(input clk, input reset, input enable, output reg [3:0] number);
+
+    always @(posedge clk or posedge reset) 
+    begin
+        if (reset) 
+            number <= 4'b0000;
+        else if (enable) 
+            number <= number + 1;
+    end
+
+endmodule
+
+module money_counter(input clk, input reset, input [1:0] coin, output reg [15:0] total, output reg [3:0] num_500, num_1000, num_2000, num_5000);
+
+    wire [3:0] coin_500, coin_1000, coin_2000, cash_5000;
+
+    Counter coin500 (.clk(clk), .reset(reset), .enable(coin == 2'b00), .number(coin_500));
+    Counter coin1000 (.clk(clk), .reset(reset), .enable(coin == 2'b01), .number(coin_1000));
+    Counter coin2000 (.clk(clk), .reset(reset), .enable(coin == 2'b10), .number(coin_2000));
+    Counter cash5000 (.clk(clk), .reset(reset), .enable(coin == 2'b11), .number(cash_5000));
 
     always @(posedge clk or posedge reset) 
     begin
         if (reset) 
         begin
-            total <= 0;
+            total <= 16'b0;
+            num_500 <= 4'b0;
+            num_1000 <= 4'b0;
+            num_2000 <= 4'b0;
+            num_5000 <= 4'b0;
         end 
         else 
         begin
-            case (coin)
-                2'b00: total <= total + 500;
-                2'b01: total <= total + 1000;
-                2'b10: total <= total + 2000;
-                2'b11: total <= total + 5000;
-                default: total <= total;
-            endcase
+            num_500 <= coin_500;
+            num_1000 <= coin_1000;
+            num_2000 <= coin_2000;
+            num_5000 <= cash_5000;
+            total <= (coin_500 * 500) + (coin_1000 * 1000) + 
+                     (coin_2000 * 2000) + (cash_5000 * 5000);
         end
     end
 
@@ -30,20 +52,19 @@ module product_enable_generator(input [2:0] product_id, output reg [7:0] product
 
 endmodule
 
-module product_manager(input clk, input reset, input [2:0] product_id, input didBuy, output reg [7:0] in_stock_amount, output reg low_stock);
+module product_manager(input clk, input reset, input [2:0] product_id, input didBuy, output reg [4:0] in_stock_amount, output reg low_stock);
 
-    reg [7:0] inventory [7:0];
+    reg [4:0] inventory [7:0];
+    wire [4:0] decremented_value;
+    wire comparison_result;
 
-    initial 
+    parameter LOW_THRESHOLD = 5'b00101;
+
+    always @(posedge reset) 
     begin
-        inventory[0] = 10;
-        inventory[1] = 10;
-        inventory[2] = 10;
-        inventory[3] = 10;
-        inventory[4] = 10;
-        inventory[5] = 10;
-        inventory[6] = 10;
-        inventory[7] = 10;
+        integer i;
+        for (i = 0; i < 8; i = i + 1) 
+            inventory[i] <= 5'b01010;
     end
 
     always @(posedge clk or posedge reset) 
@@ -51,37 +72,20 @@ module product_manager(input clk, input reset, input [2:0] product_id, input did
         if (reset) 
         begin
             low_stock <= 0;
+            in_stock_amount <= 0;
         end 
-        else if (didBuy) 
+        else if (didBuy && product_id < 8 && inventory[product_id] > 0) 
         begin
-            if (inventory[product_id] > 0) 
-            begin
-                inventory[product_id] <= inventory[product_id] - 1;
-                if (inventory[product_id] <= 5) 
-                begin
-                    low_stock <= 1;
-                end 
-                else 
-                begin
-                    low_stock <= 0;
-                end
-            end
-        end
-    end
-
-    always @(posedge clk or posedge reset) 
-    begin
-        if (reset) 
-        begin
-            in_stock_amont <= 0;
-        end
-        else 
-        begin
-            in_stock_amont <= inventory[product_id];
+            inventory[product_id] <= inventory[product_id] - 1;
+            in_stock_amount <= inventory[product_id] - 1;
+            low_stock <= (inventory[product_id] - 1 <= LOW_THRESHOLD);
         end
     end
 
 endmodule
+
+
+
 
 module fsm(input clk, input reset, input money_validation, input is_product_selected, input is_enough_money, output reg [1:0] state);
 
@@ -193,167 +197,3 @@ endmodule
 // Additional modules such as display can be implemented similarly.
 
 
-
-
-//tb
-
-module vending_machine_tb;
-
-    // Inputs
-    reg clk;
-    reg reset;
-    reg [1:0] coin;
-    reg [2:0] product_id;
-    reg didBuy;
-    reg money_validation;
-    reg is_product_selected;
-    reg is_enough_money;
-    reg [3:0] product_count;
-    reg [2:0] feedback;
-
-    // Outputs
-    wire [15:0] total;
-    wire [7:0] product_enable;
-    wire [7:0] in_stock_amont;
-    wire low_stock;
-    wire [1:0] state;
-    wire [15:0] discounted_amount;
-    // !! I couldent work with array in verilog !!
-    wire [2:0] stored_feedback_0;
-    wire [2:0] stored_feedback_1;
-    wire [2:0] stored_feedback_2;
-    wire [2:0] stored_feedback_3;
-    wire [2:0] stored_feedback_4;
-    wire [2:0] stored_feedback_5;
-    wire [2:0] stored_feedback_6;
-    wire [2:0] stored_feedback_7;
-
-    // Instantiate the modules
-    money_counter mc (
-        .clk(clk),
-        .reset(reset),
-        .coin(coin),
-        .total(total)
-    );
-
-    product_enable_generator peg (
-        .product_id(product_id),
-        .product_enable(product_enable)
-    );
-
-    product_manager pm (
-        .clk(clk),
-        .reset(reset),
-        .product_id(product_id),
-        .didBuy(didBuy),
-        .in_stock_amont(in_stock_amont),
-        .low_stock(low_stock)
-    );
-
-    fsm fsm_inst (
-        .clk(clk),
-        .reset(reset),
-        .money_validation(money_validation),
-        .is_product_selected(is_product_selected),
-        .is_enough_money(is_enough_money),
-        .state(state)
-    );
-
-    inteligent_discount id (
-        .real_amount(total),
-        .product_count(product_count),
-        .discounted_amount(discounted_amount)
-    );
-
-    feedback_storage fs (
-        .clk(clk),
-        .reset(reset),
-        .product_id(product_id),
-        .feedback(feedback),
-        .stored_feedback_0(stored_feedback_0),
-        .stored_feedback_1(stored_feedback_1),
-        .stored_feedback_2(stored_feedback_2),
-        .stored_feedback_3(stored_feedback_3),
-        .stored_feedback_4(stored_feedback_4),
-        .stored_feedback_5(stored_feedback_5),
-        .stored_feedback_6(stored_feedback_6),
-        .stored_feedback_7(stored_feedback_7)
-    );
-
-    // Clock generation
-    always begin
-        #5 clk = ~clk;  // Generate clock with 10ns period
-    end
-
-    // Test procedure
-    initial begin
-        // Initialize signals
-        clk = 0;
-        reset = 0;
-        coin = 2'b00; // Insert 500
-        product_id = 3'b000; // Select product 0
-        didBuy = 0;
-        money_validation = 0;
-        is_product_selected = 0;
-        is_enough_money = 0;
-        product_count = 4'd5; // Less than 10 products
-        feedback = 3'b001; // Feedback rating: 1
-
-        // Apply reset
-        reset = 1;
-        #10;
-        reset = 0;
-
-        // Test money counter (insert coins)
-        coin = 2'b00; // Insert 500
-        #10;
-        coin = 2'b01; // Insert 1000
-        #10;
-        coin = 2'b10; // Insert 2000
-        #10;
-        coin = 2'b11; // Insert 5000
-        #10;
-
-        // Check total amount
-        $display("Total Amount: %d", total);
-
-        // Test product selection (select product 0)
-        product_id = 3'b000;
-        is_product_selected = 1;
-        #10;
-        is_product_selected = 0;
-        
-        // Test if enough money
-        is_enough_money = 1;
-        #10;
-        is_enough_money = 0;
-
-        // Simulate a purchase (didBuy)
-        didBuy = 1;
-        #10;
-        didBuy = 0;
-
-        // Check if product is dispensed and stock is updated
-        $display("Product 0 Stock after purchase: %d", in_stock_amont);
-        $display("Low Stock: %d", low_stock);
-
-        // Test discount system
-        product_count = 4'd15; // More than 10 products for discount
-        #10;
-        $display("Discounted Amount: %d", discounted_amount);
-
-        // Test feedback storage (product 0 gets feedback)
-        feedback = 3'b011; // Feedback rating: 3
-        #10;
-        $display("Stored Feedback for Product 0: %d", stored_feedback_0);
-
-        // Test FSM state transitions
-        money_validation = 1;
-        #10;
-        $display("FSM State: %b", state); // Check FSM state
-
-        // End simulation
-        $finish;
-    end
-
-endmodule
