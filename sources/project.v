@@ -1,319 +1,369 @@
-module Counter(input clock, input reset, input enable, output reg [7:0] number);
+// Vending Machine Project in Verilog
 
-    always @(posedge clock or posedge reset) 
-    begin
-        if (reset) 
-        begin
-            number <= 8'b0;
+// 1. Money Counter Module
+module money_counter(
+    input clk,
+    input reset,
+    input [1:0] coin, // 00: 500, 01: 1000, 10: 2000, 11: 5000
+    output reg [15:0] total);
+
+    always @(posedge clk or posedge reset) begin
+        if (reset) begin
+            total <= 0;
         end 
-        else if (enable) 
-        begin
-            number <= number + 1;
+        else begin
+            case (coin)
+                2'b00: total <= total + 500;
+                2'b01: total <= total + 1000;
+                2'b10: total <= total + 2000;
+                2'b11: total <= total + 5000;
+                default: total <= total;
+            endcase
+        end
+    end
+endmodule
+
+// 2. Product Selection Decoder
+module product_enable_generator(
+    input [2:0] product_id,
+    output reg [7:0] product_enable);
+
+    always @(*) begin
+        product_enable = 8'b00000000;
+        product_enable[product_id] = 1;
+    end
+endmodule
+
+// 3. Product Manager
+module product_manager(
+    input clk,
+    input reset,
+    input [2:0] product_id,
+    input didBuy,
+    output reg [7:0] in_stock_amont,
+    output reg low_stock);
+
+    reg [7:0] inventory [7:0];
+
+    // inventory should have 10 product for each
+    initial begin
+        inventory[0] = 10;
+        inventory[1] = 10;
+        inventory[2] = 10;
+        inventory[3] = 10;
+        inventory[4] = 10;
+        inventory[5] = 10;
+        inventory[6] = 10;
+        inventory[7] = 10;
+    end
+
+    always @(posedge clk or posedge reset) begin
+        if (reset) begin
+            low_stock <= 0;
+        end 
+        else if (didBuy) begin
+
+            // Check if product is in stock or not
+            if (inventory[product_id] > 0) begin
+
+                inventory[product_id] <= inventory[product_id] - 1;
+
+                // Set an alert for low stock
+                if (inventory[product_id] <= 5) begin
+                    low_stock <= 1;
+                end else begin
+                    low_stock <= 0;
+                end
+            end
         end
     end
 
+    always @(posedge clk or posedge reset) begin
+        if (reset) begin
+            in_stock_amont <= 0;
+        end
+        else begin
+            in_stock_amont <= inventory[product_id];
+        end
+    end
+    // assign in_stock_amont = inventory[product_id];
+
 endmodule
 
-module MoneyInput(input clock, input reset, input [3:0] money_type, output reg [3:0] error, output reg [15:0] total, output reg [7:0] num_500, output reg [7:0] num_1000, output reg [7:0] num_2000, output reg [7:0] num_5000);
+// 4. FSM for Vending Machine
+module fsm(
+    input clk,
+    input reset,
+    input money_validation,
+    input is_product_selected,
+    input is_enough_money,
+    output reg [1:0] state);
 
-    wire [7:0] coin_500;
-    wire [7:0] coin_1000;
-    wire [7:0] coin_2000;
-    wire [7:0] cash_5000;
+    // Set programmer friendly names for each state
+    parameter IDLE = 2'b00, SELECT = 2'b01, PAY = 2'b10, DISPENSE = 2'b11;
 
-    Counter coin500 (.clock(clock), .reset(reset), .enable(money_type == 4'b0001), .number(coin_500));
-    Counter coin1000 (.clock(clock), .reset(reset), .enable(money_type == 4'b0010), .number(coin_1000));
-    Counter coin2000 (.clock(clock), .reset(reset), .enable(money_type == 4'b0100), .number(coin_2000));
-    Counter cash5000 (.clock(clock), .reset(reset), .enable(money_type == 4'b1000), .number(cash_5000));
-
-    always @(posedge clock or posedge reset) 
-    begin
-        if (reset) 
-        begin
-            total <= 16'b0;
-            error <= 4'b0;
-            num_500 <= 8'b0;
-            num_1000 <= 8'b0;
-            num_2000 <= 8'b0;
-            num_5000 <= 8'b0;
+    always @(posedge clk or posedge reset) begin
+        if (reset) begin
+            state <= IDLE;
         end 
-        else 
-        begin
-            case (money_type)
-                4'b0001: 
-                begin
-                    total <= total + 500;
-                    num_500 <= coin_500;
-                    error <= 4'b0;
+        else begin
+            case (state)
+                IDLE: begin
+                    if (money_validation) begin
+                        state <= SELECT;
+                    end
                 end
-                4'b0010: 
-                begin
-                    total <= total + 1000;
-                    num_1000 <= coin_1000;
-                    error <= 4'b0;
+
+                SELECT: begin
+                    if (is_product_selected) begin
+                        state <= PAY;
+                    end
                 end
-                4'b0100: 
-                begin
-                    total <= total + 2000;
-                    num_2000 <= coin_2000;
-                    error <= 4'b0;
+
+                PAY: begin
+                    if (is_enough_money) begin
+                        state <= DISPENSE;
+                    end
                 end
-                4'b1000: 
-                begin
-                    total <= total + 5000;
-                    num_5000 <= cash_5000;
-                    error <= 4'b0;
+
+                DISPENSE: begin
+                    state <= IDLE;
                 end
-                default: 
-                begin
-                    error <= 4'b1111; 
-                    $display("Error: Invalid Money Type!");
-                end
+
+                default:
+                    state <= IDLE;
+            endcase
+        end
+    end
+endmodule
+
+// 5. Discount System
+module inteligent_discount(
+    input [15:0] real_amount,
+    input [3:0] product_count,
+    output reg [15:0] discounted_amount);
+
+    reg [15:0] discount;
+
+    always @(*) begin
+        if (product_count > 10) begin
+
+            // کامنت های این بخش بعدا باید حذف شود
+            // سیستم تخفیف با گیت های منطقی پیاده سازی شود
+            // چرا به جای نود درصد، هفتاد و پنج درصد؟
+            // Calculate 90% of real_amount using binary operations
+            discount = (real_amount >> 1) + (real_amount >> 2); // 50% + 25% = 75%
+            discounted_amount = real_amount - discount;
+        end 
+        else begin
+            discounted_amount = real_amount;
+        end
+    end
+endmodule
+
+// 6. Feedback Storage
+module feedback_storage(
+    input clk,
+    input reset,
+    input [2:0] product_id,
+    input [2:0] feedback, // 001: 1, 010: 2, 011: 3, 100: 4, 101: 5, other: invalid
+    output reg [2:0] stored_feedback_0, // !! I couldent work with array in verilog !!
+    output reg [2:0] stored_feedback_1,
+    output reg [2:0] stored_feedback_2,
+    output reg [2:0] stored_feedback_3,
+    output reg [2:0] stored_feedback_4,
+    output reg [2:0] stored_feedback_5,
+    output reg [2:0] stored_feedback_6,
+    output reg [2:0] stored_feedback_7
+);
+
+    always @(posedge clk or posedge reset) begin
+        if (reset) begin
+            stored_feedback_0 <= 0;
+            stored_feedback_1 <= 0;
+            stored_feedback_2 <= 0;
+            stored_feedback_3 <= 0;
+            stored_feedback_4 <= 0;
+            stored_feedback_5 <= 0;
+            stored_feedback_6 <= 0;
+            stored_feedback_7 <= 0;
+        end 
+        else begin
+            case (product_id)
+                3'd0: stored_feedback_0 <= feedback;
+                3'd1: stored_feedback_1 <= feedback;
+                3'd2: stored_feedback_2 <= feedback;
+                3'd3: stored_feedback_3 <= feedback;
+                3'd4: stored_feedback_4 <= feedback;
+                3'd5: stored_feedback_5 <= feedback;
+                3'd6: stored_feedback_6 <= feedback;
+                3'd7: stored_feedback_7 <= feedback;
+                default: ;
             endcase
         end
     end
 
 endmodule
 
-module decoderSelector(input [2:0] address, output reg [7:0] selectors, output reg [2:0] product_address);
 
-    always @(*) begin
-        selectors = 8'b0;
-        case (address)
-            3'b000: selectors[0] = 1;
-            3'b001: selectors[1] = 1;
-            3'b010: selectors[2] = 1;
-            3'b011: selectors[3] = 1;
-            3'b100: selectors[4] = 1;
-            3'b101: selectors[5] = 1;
-            3'b110: selectors[6] = 1;
-            3'b111: selectors[7] = 1;
-            default: selectors = 8'b0;
-        endcase
-        product_address = address;
-    end
-    
-endmodule
+// Additional modules such as display can be implemented similarly.
 
-module FSM(input clock, input reset, input [2:0] product_address, output reg [15:0] price);
-
-    reg [15:0] price_0, price_1, price_2, price_3, price_4, price_5, price_6, price_7;
-    wire [15:0] discounted_price;
-    
-    applyDiscount discount_system (
-        .amount(price),   // قیمت محصول
-        .discounted_amount(discounted_price)  // قیمت تخفیف‌شده
-    );
-    
-    initial 
-    begin
-        price_0 = 16'd500; 
-        price_1 = 16'd1000;
-        price_2 = 16'd1500;
-        price_3 = 16'd2000;
-        price_4 = 16'd2500;
-        price_5 = 16'd3000;
-        price_6 = 16'd3500;
-        price_7 = 16'd4000;
-    end
-    
-    always @(posedge clock or posedge reset) 
-    begin
-        if (reset) 
-        begin
-            price <= 16'd0;
-        end 
-        else 
-        begin
-            case (product_address)
-                3'b000: price <= price_0;
-                3'b001: price <= price_1;
-                3'b010: price <= price_2;
-                3'b011: price <= price_3;
-                3'b100: price <= price_4;
-                3'b101: price <= price_5;
-                3'b110: price <= price_6;
-                3'b111: price <= price_7;
-                default: price <= 16'd0;
-            endcase
-        end
-    end
-    
-    always @(price) 
-    begin
-        price <= discounted_price;
-    end
-
-endmodule
-
-module ProductSelector(input clock, input reset, input [2:0] address, output [15:0] price);
-    
-    wire [7:0] select;
-    wire [2:0] product_address;
-
-    decoderSelector decoder (.address(address), .selectors(select), .product_address(product_address));
-    FSM fsm (.clock(clock), .reset(reset), .product_address(product_address), .price(price));
-
-endmodule
-
-module Comparator(input [7:0] num_products, output reg discount_flag);
-    always @(*) begin
-        if (num_products > 8'd10) 
-            discount_flag = 1;
-        else 
-            discount_flag = 0;
-    end
-endmodule
-
-
-module Multiplier16x16(input [15:0] A, input [15:0] B, output [31:0] Product);
-
-    // P is Partial Product
-    wire [15:0] P[15:0]; 
-    wire [31:0] Sum[15:0];
-
-    // Calculate Partial Products
-    genvar i;
-    generate
-        for (i = 0; i < 16; i = i + 1) begin
-            assign P[i] = A & {16{B[i]}}; // AND each bit of B with A
-        end
-    endgenerate
-
-    // Shift and sum the partial products
-    generate
-        for (i = 0; i < 16; i = i + 1) begin
-            assign Sum[i] = {{16-i{1'b0}}, P[i], {i{1'b0}}}; // Adjusted for proper shifting
-        end
-    endgenerate
-
-    reg [31:0] temp_product;
-    integer j;  // Use integer instead of genvar for the loop in always block
-
-    always @(*) begin
-        temp_product = 32'b0;
-
-        // Loop through Sum array and accumulate the results
-        for (j = 0; j < 16; j = j + 1) begin
-            temp_product = temp_product + Sum[j];
-        end
-    end
-
-    assign Product = temp_product;
-
-endmodule
-
-module applyDiscount (input [15:0] amount, output [15:0] discounted_amount);
-
-    wire [31:0] product;
-    wire [31:0] shifted_result;
-    reg [15:0] final_amount;
-
-    Multiplier16x16 multiplier (
-        .A(amount),
-        .B(16'd9),
-        .Product(product)
-    );
-
-    // Devide by 16 with shift to right
-    assign shifted_result = product >> 4;
-
-    
-    always @(*) begin
-
-        // Cilling
-        if (product[3:0] != 4'b0000)
-            final_amount = shifted_result + 1;
-        else
-            final_amount = shifted_result;
-    end
-
-    assign discounted_amount = final_amount;
-
-endmodule
-
-module testBench;
+module vending_machine_tb;
 
     // Inputs
-    reg clock;
+    reg clk;
     reg reset;
-    reg [3:0] money_type;
-    reg [2:0] address;
+    reg [1:0] coin;
+    reg [2:0] product_id;
+    reg didBuy;
+    reg money_validation;
+    reg is_product_selected;
+    reg is_enough_money;
+    reg [3:0] product_count;
+    reg [2:0] feedback;
 
     // Outputs
-    wire [3:0] error;
     wire [15:0] total;
-    wire [7:0] num_500;
-    wire [7:0] num_1000;
-    wire [7:0] num_2000;
-    wire [7:0] num_5000;
-    wire [15:0] price;
+    wire [7:0] product_enable;
+    wire [7:0] in_stock_amont;
+    wire low_stock;
+    wire [1:0] state;
+    wire [15:0] discounted_amount;
+    // !! I couldent work with array in verilog !!
+    wire [2:0] stored_feedback_0;
+    wire [2:0] stored_feedback_1;
+    wire [2:0] stored_feedback_2;
+    wire [2:0] stored_feedback_3;
+    wire [2:0] stored_feedback_4;
+    wire [2:0] stored_feedback_5;
+    wire [2:0] stored_feedback_6;
+    wire [2:0] stored_feedback_7;
 
     // Instantiate the modules
-    MoneyInput moneyInput (
-        .clock(clock), 
-        .reset(reset), 
-        .money_type(money_type), 
-        .error(error), 
-        .total(total), 
-        .num_500(num_500), 
-        .num_1000(num_1000), 
-        .num_2000(num_2000), 
-        .num_5000(num_5000)
+    money_counter mc (
+        .clk(clk),
+        .reset(reset),
+        .coin(coin),
+        .total(total)
     );
 
-    ProductSelector productSelector (
-        .clock(clock), 
-        .reset(reset), 
-        .address(address), 
-        .price(price)
+    product_enable_generator peg (
+        .product_id(product_id),
+        .product_enable(product_enable)
+    );
+
+    product_manager pm (
+        .clk(clk),
+        .reset(reset),
+        .product_id(product_id),
+        .didBuy(didBuy),
+        .in_stock_amont(in_stock_amont),
+        .low_stock(low_stock)
+    );
+
+    fsm fsm_inst (
+        .clk(clk),
+        .reset(reset),
+        .money_validation(money_validation),
+        .is_product_selected(is_product_selected),
+        .is_enough_money(is_enough_money),
+        .state(state)
+    );
+
+    inteligent_discount id (
+        .real_amount(total),
+        .product_count(product_count),
+        .discounted_amount(discounted_amount)
+    );
+
+    feedback_storage fs (
+        .clk(clk),
+        .reset(reset),
+        .product_id(product_id),
+        .feedback(feedback),
+        .stored_feedback_0(stored_feedback_0),
+        .stored_feedback_1(stored_feedback_1),
+        .stored_feedback_2(stored_feedback_2),
+        .stored_feedback_3(stored_feedback_3),
+        .stored_feedback_4(stored_feedback_4),
+        .stored_feedback_5(stored_feedback_5),
+        .stored_feedback_6(stored_feedback_6),
+        .stored_feedback_7(stored_feedback_7)
     );
 
     // Clock generation
-    always #5 clock = ~clock;
+    always begin
+        #5 clk = ~clk;  // Generate clock with 10ns period
+    end
 
+    // Test procedure
     initial begin
-        // Initialize Inputs
-        clock = 0;
-        reset = 1;
-        money_type = 0;
-        address = 0;
+        // Initialize signals
+        clk = 0;
+        reset = 0;
+        coin = 2'b00; // Insert 500
+        product_id = 3'b000; // Select product 0
+        didBuy = 0;
+        money_validation = 0;
+        is_product_selected = 0;
+        is_enough_money = 0;
+        product_count = 4'd5; // Less than 10 products
+        feedback = 3'b001; // Feedback rating: 1
 
-        // Wait for global reset
+        // Apply reset
+        reset = 1;
         #10;
         reset = 0;
 
-        // Test MoneyInput module
-        money_type = 4'b0001; // Insert 500
+        // Test money counter (insert coins)
+        coin = 2'b00; // Insert 500
         #10;
-        money_type = 4'b0010; // Insert 1000
+        coin = 2'b01; // Insert 1000
         #10;
-        money_type = 4'b0100; // Insert 2000
+        coin = 2'b10; // Insert 2000
         #10;
-        money_type = 4'b1000; // Insert 5000
-        #10;
-        money_type = 4'b1111; // Invalid money type
+        coin = 2'b11; // Insert 5000
         #10;
 
-        // Test ProductSelector module
-        address = 3'b000; // Select product 0
-        #10;
-        address = 3'b001; // Select product 1
-        #10;
-        address = 3'b010; // Select product 2
-        #10;
-        address = 3'b011; // Select product 3
-        #10;
-        address = 3'b100; // Select product 4
-        #10;
-        address = 3'b101; // Select product 5
-        #10;
-        address = 3'b110; // Select product 6
-        #10;
-        address = 3'b111; // Select product 7
-        #10;
+        // Check total amount
+        $display("Total Amount: %d", total);
 
-        // Finish simulation
+        // Test product selection (select product 0)
+        product_id = 3'b000;
+        is_product_selected = 1;
+        #10;
+        is_product_selected = 0;
+        
+        // Test if enough money
+        is_enough_money = 1;
+        #10;
+        is_enough_money = 0;
+
+        // Simulate a purchase (didBuy)
+        didBuy = 1;
+        #10;
+        didBuy = 0;
+
+        // Check if product is dispensed and stock is updated
+        $display("Product 0 Stock after purchase: %d", in_stock_amont);
+        $display("Low Stock: %d", low_stock);
+
+        // Test discount system
+        product_count = 4'd15; // More than 10 products for discount
+        #10;
+        $display("Discounted Amount: %d", discounted_amount);
+
+        // Test feedback storage (product 0 gets feedback)
+        feedback = 3'b011; // Feedback rating: 3
+        #10;
+        $display("Stored Feedback for Product 0: %d", stored_feedback_0);
+
+        // Test FSM state transitions
+        money_validation = 1;
+        #10;
+        $display("FSM State: %b", state); // Check FSM state
+
+        // End simulation
         $finish;
     end
 
