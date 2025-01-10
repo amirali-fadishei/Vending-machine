@@ -1,17 +1,13 @@
-// Vending Machine Project in Verilog
+module money_counter(input clk, input reset, input [1:0] coin, output reg [15:0] total);
 
-// 1. Money Counter Module
-module money_counter(
-    input clk,
-    input reset,
-    input [1:0] coin, // 00: 500, 01: 1000, 10: 2000, 11: 5000
-    output reg [15:0] total);
-
-    always @(posedge clk or posedge reset) begin
-        if (reset) begin
+    always @(posedge clk or posedge reset) 
+    begin
+        if (reset) 
+        begin
             total <= 0;
         end 
-        else begin
+        else 
+        begin
             case (coin)
                 2'b00: total <= total + 500;
                 2'b01: total <= total + 1000;
@@ -21,32 +17,25 @@ module money_counter(
             endcase
         end
     end
+
 endmodule
 
-// 2. Product Selection Decoder
-module product_enable_generator(
-    input [2:0] product_id,
-    output reg [7:0] product_enable);
+module product_enable_generator(input [2:0] product_id, output reg [7:0] product_enable);
 
-    always @(*) begin
+    always @(*) 
+    begin
         product_enable = 8'b00000000;
         product_enable[product_id] = 1;
     end
+
 endmodule
 
-// 3. Product Manager
-module product_manager(
-    input clk,
-    input reset,
-    input [2:0] product_id,
-    input didBuy,
-    output reg [7:0] in_stock_amont,
-    output reg low_stock);
+module product_manager(input clk, input reset, input [2:0] product_id, input didBuy, output reg [7:0] in_stock_amount, output reg low_stock);
 
     reg [7:0] inventory [7:0];
 
-    // inventory should have 10 product for each
-    initial begin
+    initial 
+    begin
         inventory[0] = 10;
         inventory[1] = 10;
         inventory[2] = 10;
@@ -57,76 +46,82 @@ module product_manager(
         inventory[7] = 10;
     end
 
-    always @(posedge clk or posedge reset) begin
-        if (reset) begin
+    always @(posedge clk or posedge reset) 
+    begin
+        if (reset) 
+        begin
             low_stock <= 0;
         end 
-        else if (didBuy) begin
-
-            // Check if product is in stock or not
-            if (inventory[product_id] > 0) begin
-
+        else if (didBuy) 
+        begin
+            if (inventory[product_id] > 0) 
+            begin
                 inventory[product_id] <= inventory[product_id] - 1;
-
-                // Set an alert for low stock
-                if (inventory[product_id] <= 5) begin
+                if (inventory[product_id] <= 5) 
+                begin
                     low_stock <= 1;
-                end else begin
+                end 
+                else 
+                begin
                     low_stock <= 0;
                 end
             end
         end
     end
 
-    always @(posedge clk or posedge reset) begin
-        if (reset) begin
+    always @(posedge clk or posedge reset) 
+    begin
+        if (reset) 
+        begin
             in_stock_amont <= 0;
         end
-        else begin
+        else 
+        begin
             in_stock_amont <= inventory[product_id];
         end
     end
-    // assign in_stock_amont = inventory[product_id];
 
 endmodule
 
-// 4. FSM for Vending Machine
-module fsm(
-    input clk,
-    input reset,
-    input money_validation,
-    input is_product_selected,
-    input is_enough_money,
-    output reg [1:0] state);
+module fsm(input clk, input reset, input money_validation, input is_product_selected, input is_enough_money, output reg [1:0] state);
 
-    // Set programmer friendly names for each state
     parameter IDLE = 2'b00, SELECT = 2'b01, PAY = 2'b10, DISPENSE = 2'b11;
 
-    always @(posedge clk or posedge reset) begin
-        if (reset) begin
+    always @(posedge clk or posedge reset) 
+    begin
+        if (reset) 
+        begin
             state <= IDLE;
         end 
-        else begin
+        else 
+        begin
             case (state)
-                IDLE: begin
-                    if (money_validation) begin
+                IDLE: 
+                begin
+                    if (money_validation) 
+                    begin
                         state <= SELECT;
                     end
                 end
 
-                SELECT: begin
-                    if (is_product_selected) begin
+                SELECT: 
+                begin
+                    if (is_product_selected) 
+                    begin
                         state <= PAY;
                     end
                 end
 
-                PAY: begin
-                    if (is_enough_money) begin
+                PAY: 
+                begin
+                    if (is_enough_money) 
+                    begin
                         state <= DISPENSE;
                     end
                 end
 
-                DISPENSE: begin
+                DISPENSE: 
+                begin
                     state <= IDLE;
                 end
 
@@ -135,18 +130,17 @@ module fsm(
             endcase
         end
     end
+
 endmodule
 
-// 5. Discount System
-module inteligent_discount(
-    input [15:0] real_amount,
-    input [3:0] product_count,
-    output reg [15:0] discounted_amount);
+module inteligent_discount(input [15:0] real_amount, input [3:0] product_count, output reg [15:0] discounted_amount);
 
     reg [15:0] discount;
 
-    always @(*) begin
-        if (product_count > 10) begin
+    always @(*) 
+    begin
+        if (product_count > 10) 
+        begin
 
             // کامنت های این بخش بعدا باید حذف شود
             // سیستم تخفیف با گیت های منطقی پیاده سازی شود
@@ -155,30 +149,19 @@ module inteligent_discount(
             discount = (real_amount >> 1) + (real_amount >> 2); // 50% + 25% = 75%
             discounted_amount = real_amount - discount;
         end 
-        else begin
+        else 
+        begin
             discounted_amount = real_amount;
         end
     end
 endmodule
 
-// 6. Feedback Storage
-module feedback_storage(
-    input clk,
-    input reset,
-    input [2:0] product_id,
-    input [2:0] feedback, // 001: 1, 010: 2, 011: 3, 100: 4, 101: 5, other: invalid
-    output reg [2:0] stored_feedback_0, // !! I couldent work with array in verilog !!
-    output reg [2:0] stored_feedback_1,
-    output reg [2:0] stored_feedback_2,
-    output reg [2:0] stored_feedback_3,
-    output reg [2:0] stored_feedback_4,
-    output reg [2:0] stored_feedback_5,
-    output reg [2:0] stored_feedback_6,
-    output reg [2:0] stored_feedback_7
-);
+module feedback_storage(input clk, input reset, input [2:0] product_id, input [2:0] feedback, output reg [2:0] stored_feedback_0, output reg [2:0] stored_feedback_1, output reg [2:0] stored_feedback_2, output reg [2:0] stored_feedback_3, output reg [2:0] stored_feedback_4, output reg [2:0] stored_feedback_5, output reg [2:0] stored_feedback_6, output reg [2:0] stored_feedback_7);
 
-    always @(posedge clk or posedge reset) begin
-        if (reset) begin
+    always @(posedge clk or posedge reset) 
+    begin
+        if (reset) 
+        begin
             stored_feedback_0 <= 0;
             stored_feedback_1 <= 0;
             stored_feedback_2 <= 0;
@@ -188,7 +171,8 @@ module feedback_storage(
             stored_feedback_6 <= 0;
             stored_feedback_7 <= 0;
         end 
-        else begin
+        else 
+        begin
             case (product_id)
                 3'd0: stored_feedback_0 <= feedback;
                 3'd1: stored_feedback_1 <= feedback;
@@ -207,6 +191,11 @@ endmodule
 
 
 // Additional modules such as display can be implemented similarly.
+
+
+
+
+//tb
 
 module vending_machine_tb;
 
