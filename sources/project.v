@@ -58,24 +58,32 @@ module product_enable_generator(input [2:0] product_id, output reg [7:0] product
     end
 endmodule
 
-module product_manager(input clk, input reset, input [2:0] product_id, input didBuy, output reg [3:0] in_stock_amount, 
-                       output reg low_stock, output reg error, output reg [7:0] product_price);
+module product_manager(input clk, input reset, input [2:0] product_id, 
+    input didBuy, 
+    output reg [3:0] in_stock_amount_0, output reg [3:0] in_stock_amount_1, 
+    output reg [3:0] in_stock_amount_2, output reg [3:0] in_stock_amount_3, 
+    output reg [3:0] in_stock_amount_4, output reg [3:0] in_stock_amount_5, 
+    output reg [3:0] in_stock_amount_6, output reg [3:0] in_stock_amount_7, 
+    output reg low_stock, 
+    output reg error, 
+    output reg [7:0] product_price
+);
 
-    reg [4:0] inventory [7:0];
-    reg [7:0] prices [7:0];
-    parameter LOW_THRESHOLD = 5'b00101;
-    parameter INITIAL_STOCK = 5'b01010;
+    reg [4:0] inventory [7:0]; // Array for product inventory
+    reg [7:0] prices [7:0];    // Array for product prices
+    parameter LOW_THRESHOLD = 5'b00101; // 5
+    parameter INITIAL_STOCK = 5'b01010; // 10
 
     initial 
     begin
-        prices[0] = 8'b00001010;
-        prices[1] = 8'b00010100;
-        prices[2] = 8'b00001111;
-        prices[3] = 8'b00011110;
-        prices[4] = 8'b00011001;
-        prices[5] = 8'b00100011;
-        prices[6] = 8'b00101000;
-        prices[7] = 8'b00110010;
+        prices[0] = 8'b00001010; //  10$
+        prices[1] = 8'b00010100; //  20$
+        prices[2] = 8'b00001111; //  15$
+        prices[3] = 8'b00011110; //  30$
+        prices[4] = 8'b00011001; //  25$
+        prices[5] = 8'b00100011; //  35$
+        prices[6] = 8'b00101000; //  40$
+        prices[7] = 8'b00110010; //  50$
     end
 
     wire [7:0] product_enable;
@@ -84,16 +92,23 @@ module product_manager(input clk, input reset, input [2:0] product_id, input did
         .product_enable(product_enable)
     );
 
+    integer i;
     always @(posedge reset) 
     begin
-        inventory[0] <= INITIAL_STOCK;
-        inventory[1] <= INITIAL_STOCK;
-        inventory[2] <= INITIAL_STOCK;
-        inventory[3] <= INITIAL_STOCK;
-        inventory[4] <= INITIAL_STOCK;
-        inventory[5] <= INITIAL_STOCK;
-        inventory[6] <= INITIAL_STOCK;
-        inventory[7] <= INITIAL_STOCK;
+        // Initialize inventory and stock amounts
+        for (i = 0; i < 8; i = i + 1) 
+        begin
+            inventory[i] = INITIAL_STOCK;
+        end
+        // Set stock amounts for individual products
+        in_stock_amount_0 <= INITIAL_STOCK;
+        in_stock_amount_1 <= INITIAL_STOCK;
+        in_stock_amount_2 <= INITIAL_STOCK;
+        in_stock_amount_3 <= INITIAL_STOCK;
+        in_stock_amount_4 <= INITIAL_STOCK;
+        in_stock_amount_5 <= INITIAL_STOCK;
+        in_stock_amount_6 <= INITIAL_STOCK;
+        in_stock_amount_7 <= INITIAL_STOCK;
     end
 
     always @(posedge clk or posedge reset) 
@@ -101,7 +116,6 @@ module product_manager(input clk, input reset, input [2:0] product_id, input did
         if (reset) 
         begin
             low_stock <= 0;
-            in_stock_amount <= 0;
             error <= 0;
             product_price <= 8'd0;
         end 
@@ -118,14 +132,23 @@ module product_manager(input clk, input reset, input [2:0] product_id, input did
             else 
             begin
                 inventory[product_id] <= inventory[product_id] - 1;
-                in_stock_amount <= inventory[product_id] - 1;
+                // Update stock amounts for each individual product
+                case (product_id)
+                    3'd0: in_stock_amount_0 <= inventory[0];
+                    3'd1: in_stock_amount_1 <= inventory[1];
+                    3'd2: in_stock_amount_2 <= inventory[2];
+                    3'd3: in_stock_amount_3 <= inventory[3];
+                    3'd4: in_stock_amount_4 <= inventory[4];
+                    3'd5: in_stock_amount_5 <= inventory[5];
+                    3'd6: in_stock_amount_6 <= inventory[6];
+                    3'd7: in_stock_amount_7 <= inventory[7];
+                endcase
                 product_price <= prices[product_id];
                 low_stock <= (inventory[product_id] - 1 <= LOW_THRESHOLD);
                 error <= 0;
             end
         end
     end
-
 endmodule
 
 module Display(
@@ -178,6 +201,13 @@ module fsm(input clk, input reset, input money_validation, input is_product_sele
 
     parameter IDLE = 2'b00, SELECT = 2'b01, PAY = 2'b10, DISPENSE = 2'b11;
 
+    // مقداردهی اولیه برای خروجی‌ها
+    initial begin
+        state = IDLE;
+        enable_payment = 0;
+        enable_dispense = 0;
+    end
+
     always @(posedge clk or posedge reset) 
     begin
         if (reset) 
@@ -196,10 +226,22 @@ module fsm(input clk, input reset, input money_validation, input is_product_sele
     always @(state) 
     begin
         case (state)
-            IDLE: begin enable_payment = 0; enable_dispense = 0; end
-            SELECT: begin enable_payment = 0; enable_dispense = 0; end
-            PAY: begin enable_payment = 1; enable_dispense = 0; end
-            DISPENSE: begin enable_payment = 0; enable_dispense = 1; end
+            IDLE: begin 
+                enable_payment = 0; 
+                enable_dispense = 0; 
+            end
+            SELECT: begin 
+                enable_payment = 0; 
+                enable_dispense = 0; 
+            end
+            PAY: begin 
+                enable_payment = 1; 
+                enable_dispense = 0; 
+            end
+            DISPENSE: begin 
+                enable_payment = 0; 
+                enable_dispense = 1; 
+            end
         endcase
     end
 
@@ -300,25 +342,33 @@ module testbench;
     reg is_enough_money;
     reg [3:0] product_count;
     reg [2:0] feedback;
-    
+        
     // خروجی‌ها
     wire [15:0] total_money;
     wire [7:0] product_price;
     wire [3:0] product_count_out;
+    wire [3:0] in_stock_amount_0;
+    wire [3:0] in_stock_amount_1;
+    wire [3:0] in_stock_amount_2;
+    wire [3:0] in_stock_amount_3;
+    wire [3:0] in_stock_amount_4;
+    wire [3:0] in_stock_amount_5;
+    wire [3:0] in_stock_amount_6;
+    wire [3:0] in_stock_amount_7;
     wire low_stock;
     wire error;
     wire [127:0] display;
     wire [1:0] state;
     wire enable_payment;
     wire enable_dispense;
-    
+        
     // ماژول‌ها
     money_counter mc (
         .clk(clk), 
         .reset(reset), 
         .coin(coin), 
         .total(total_money), 
-        .num_500(), 
+        .num_5000(), 
         .num_1000(), 
         .num_2000(), 
         .num_5000(), 
@@ -330,7 +380,14 @@ module testbench;
         .reset(reset), 
         .product_id(product_id), 
         .didBuy(didBuy), 
-        .in_stock_amount(product_count_out), 
+        .in_stock_amount_0(in_stock_amount_0),  // موجودی محصول 0
+        .in_stock_amount_1(in_stock_amount_1),  // موجودی محصول 1
+        .in_stock_amount_2(in_stock_amount_2),  // موجودی محصول 2
+        .in_stock_amount_3(in_stock_amount_3),  // موجودی محصول 3
+        .in_stock_amount_4(in_stock_amount_4),  // موجودی محصول 4
+        .in_stock_amount_5(in_stock_amount_5),  // موجودی محصول 5
+        .in_stock_amount_6(in_stock_amount_6),  // موجودی محصول 6
+        .in_stock_amount_7(in_stock_amount_7),  // موجودی محصول 7
         .low_stock(low_stock), 
         .error(error), 
         .product_price(product_price)
@@ -382,17 +439,15 @@ module testbench;
     always #5 clk = ~clk;
 
     initial begin
-        // شروع تست بنچ
         clk = 0;
         reset = 0;
-        coin = 2'b00;  // coin 500
-        product_id = 3'b000;  // Product 0
+        coin = 2'b00;
+        product_id = 3'b000;
         didBuy = 0;
-        product_code = 3'b000;
         money_validation = 0;
         is_product_selected = 0;
         is_enough_money = 0;
-        product_count = 4'b0010;
+        product_count = 4'b010;
         feedback = 3'b010;  // Neutral feedback
 
         // Resetting
@@ -438,7 +493,7 @@ module testbench;
     // نمایش مقادیر
     always @ (posedge clk) begin
         $display("Time: %0t | Total Money: %0d | Price: %0d | Display: %s | Error: %b | Low Stock: %b", 
-                 $time, total_money, product_price, display, error, low_stock);
+                $time, total_money, product_price, display, error, low_stock);
     end
 
 endmodule
