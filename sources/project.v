@@ -175,100 +175,49 @@ module increment_counter (
   end
 endmodule
 
-// module product_manager (
-//     input clock,
-//     input reset,
-//     input [2:0] product_id,
-//     input didBuy,
-//     input [3:0] quantity,
-//     output [4:0] in_stock_amount,
-//     output low_stock,
-//     output error,
-//     output [7:0] product_price,
-//     output reg [15:0] total_price,
-//     output reg [4:0] product_purchase_count
-// );
-//   reg [4:0] inventory[7:0];
-//   reg [7:0] prices[7:0];
-//   reg [4:0] purchase_count[7:0];
-//   reg [15:0] selected_products_total;
-//   reg [3:0] total_buy_count;
-//   parameter LOW_THRESHOLD = 5'b00101;
-//   parameter INITIAL_STOCK = 5'b01010;
-//   initial begin
-//     prices[0] = 10;
-//     prices[1] = 15;
-//     prices[2] = 20;
-//     prices[3] = 25;
-//     prices[4] = 30;
-//     prices[5] = 35;
-//     prices[6] = 40;
-//     prices[7] = 45;
-//     total_buy_count = 0;
-//     selected_products_total = 0;
-//     inventory[0] = INITIAL_STOCK;
-//     inventory[1] = INITIAL_STOCK;
-//     inventory[2] = INITIAL_STOCK;
-//     inventory[3] = INITIAL_STOCK;
-//     inventory[4] = INITIAL_STOCK;
-//     inventory[5] = INITIAL_STOCK;
-//     inventory[6] = INITIAL_STOCK;
-//     inventory[7] = INITIAL_STOCK;
-//   end
-//   wire [4:0] decremented_inventory;
-//   wire [4:0] incremented_purchase_count;
-//   wire is_less_than_5;
-//   decrement_counter inventory_decrement (
-//       .clock (clock),
-//       .reset (reset),
-//       .enable(didBuy && inventory[product_id] > 0 && quantity > 0),
-//       .number(decremented_inventory)
-//   );
-//   increment_counter purchase_increment (
-//       .clock (clock),
-//       .reset (reset),
-//       .enable(didBuy && quantity > 0),
-//       .number(incremented_purchase_count)
-//   );
-//   comparator_5 compare_with_5 (
-//       .in_stock_amount(inventory[product_id]),
-//       .is_less_than_5 (is_less_than_5)
-//   );
-//   assign low_stock = is_less_than_5;
-//   assign error = (product_id >= 8 || inventory[product_id] == 0);
-//   assign product_price = (error) ? 8'd0 : prices[product_id];
-//   assign in_stock_amount = inventory[product_id];
-//   always @(posedge clock or posedge reset) begin
-//     if (reset) begin
-//       total_buy_count <= 0;
-//       selected_products_total <= 0;
-//       purchase_count[0] <= 0;
-//       purchase_count[1] <= 0;
-//       purchase_count[2] <= 0;
-//       purchase_count[3] <= 0;
-//       purchase_count[4] <= 0;
-//       purchase_count[5] <= 0;
-//       purchase_count[6] <= 0;
-//       purchase_count[7] <= 0;
-//       total_price <= 0;
-//     end else if (didBuy && inventory[product_id] > 0) begin
-//       total_buy_count <= total_buy_count + quantity;
-//       selected_products_total <= selected_products_total + (prices[product_id] * quantity);
-//     end
-//   end
-//   wire [15:0] discounted_total;
-//   intelligent_discount discount_logic (
-//       .real_amount(selected_products_total),
-//       .product_count(total_buy_count),
-//       .discounted_amount(discounted_total)
-//   );
-//   always @(*) begin
-//     total_price = discounted_total;
-//     inventory[product_id] <= decremented_inventory;
-//     purchase_count[product_id] <= incremented_purchase_count;
-//     product_purchase_count <= incremented_purchase_count;
-//   end
-// endmodule
+module JK_FlipFlop (
+    input wire J,
+    input wire K,
+    input wire CLK,
+    input wire RESET,
+    output reg Q
+);
+  always @(posedge CLK or posedge RESET) begin
+    if (RESET) Q <= 0;
+    else Q <= (J & ~Q) | (~K & Q);
+  end
+endmodule
+
+module up_down_counter (
+    input clock,
+    input reset,
+    input enable,
+    input mode, // 1 for up, 0 for down
+    output wire [4:0] number
+);
+  wire [4:0] next_number;
+  wire [4:0] temp_up;
+  wire [4:0] temp_down;
+  wire [4:0] q_state;
+
+  assign temp_up = q_state + 1;
+  assign temp_down = q_state - 1;
+  assign next_number = (reset) ? 5'b00000 : (enable ? (mode ? temp_up : temp_down) : q_state);
+  assign number = q_state;
+
+  genvar i;
+  generate
+    for (i = 0; i < 5; i = i + 1) begin : flip_flops
+      JK_FlipFlop jkff (
+        .J(next_number[i]),
+        .K(~next_number[i]),
+        .CLK(clock),
+        .RESET(reset),
+        .Q(q_state[i])
+      );
+    end
+  endgenerate
+endmodule
 
 module product_manager (
     input clock,
@@ -335,16 +284,30 @@ module product_manager (
       endcase
   end
 
-  decrement_counter inventory_decrement (
+  // decrement_counter inventory_decrement (
+  //     .clock (clock),
+  //     .reset (reset),
+  //     .enable(didBuy && inventory[index] > 0 && quantity > 0),
+  //     .number(decremented_inventory)
+  // );
+  up_down_counter inventory_decrement (
       .clock (clock),
       .reset (reset),
       .enable(didBuy && inventory[index] > 0 && quantity > 0),
+      .mode(1'b0),
       .number(decremented_inventory)
   );
-  increment_counter purchase_increment (
+  // increment_counter purchase_increment (
+  //     .clock (clock),
+  //     .reset (reset),
+  //     .enable(didBuy && quantity > 0),
+  //     .number(incremented_purchase_count)
+  // );
+  up_down_counter purchase_increment (
       .clock (clock),
       .reset (reset),
       .enable(didBuy && quantity > 0),
+      .mode(1'b1),
       .number(incremented_purchase_count)
   );
   comparator_5 compare_with_5 (
