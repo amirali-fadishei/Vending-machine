@@ -124,14 +124,14 @@ module comparator_5 (
     input [4:0] in_stock_amount,
     output is_less_than_5
 );
-  assign is_less_than_5 = (in_stock_amount < 5);
+  assign is_less_than_5 = (in_stock_amount < 5'b00101);
 endmodule
 
 module comparator_10 (
     input [3:0] product_count,
     output is_greater_than_10
 );
-  assign is_greater_than_10 = (product_count > 10);
+  assign is_greater_than_10 = (product_count > 4'b1010);
 endmodule
 
 module intelligent_discount (
@@ -281,26 +281,48 @@ module fsm (
     output reg enable_dispense
 );
   parameter IDLE = 2'b00, SELECT = 2'b01, PAY = 2'b10, DISPENSE = 2'b11;
-  reg [1:0] state_next;
+
+  reg  [1:0] state_next;
+  wire [1:0] state_reg;
+  D_FlipFlop_Gates state_dff_0 (
+      .D(state_next[0]),
+      .CLK(clock),
+      .RESET(reset),
+      .Q(state_reg[0]),
+      .Qn()
+  );
+  D_FlipFlop_Gates state_dff_1 (
+      .D(state_next[1]),
+      .CLK(clock),
+      .RESET(reset),
+      .Q(state_reg[1]),
+      .Qn()
+  );
+
   always @(posedge clock or posedge reset) begin
     if (reset) state <= IDLE;
-    else state <= state_next;
+    else state <= state_reg;
   end
+
   always @(*) begin
     case (state)
-      IDLE:
-      if (money_validation) state_next = SELECT;
-      else state_next = IDLE;
-      SELECT:
-      if (is_product_selected) state_next = PAY;
-      else state_next = SELECT;
-      PAY:
-      if (is_enough_money) state_next = DISPENSE;
-      else state_next = PAY;
+      IDLE: begin
+        if (money_validation) state_next = SELECT;
+        else state_next = IDLE;
+      end
+      SELECT: begin
+        if (is_product_selected) state_next = PAY;
+        else state_next = SELECT;
+      end
+      PAY: begin
+        if (is_enough_money) state_next = DISPENSE;
+        else state_next = PAY;
+      end
       DISPENSE: state_next = IDLE;
-      default: state_next = IDLE;
+      default:  state_next = IDLE;
     endcase
   end
+
   always @(*) begin
     enable_payment  = (state == PAY);
     enable_dispense = (state == DISPENSE);
