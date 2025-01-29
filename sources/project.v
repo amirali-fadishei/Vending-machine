@@ -1,16 +1,17 @@
-// module Counter (
-//     input clock,
-//     input reset,
-//     input enable,
-//     output [3:0] number
-// );
-//   reg [3:0] next_number;
-//   always @(posedge clock or posedge reset) begin
-//     if (reset) next_number <= 4'b0000;
-//     else if (enable && next_number < 4'b1111) next_number <= next_number + 1;
-//   end
-//   assign number = next_number;
-// endmodule
+module D_FlipFlop_Gates (
+    input  wire D,
+    input  wire CLK,
+    input  wire RESET,
+    output reg  Q,
+    output wire Qn
+);
+  assign Qn = ~Q;
+
+  always @(posedge CLK or posedge RESET) begin
+    if (RESET) Q <= 0;
+    else Q <= D;
+  end
+endmodule
 
 module Counter (
     input clock,
@@ -18,56 +19,42 @@ module Counter (
     input enable,
     output [3:0] number
 );
-    reg [3:0] next_number; // For calculating the next state
-    wire [3:0] Q;          // Outputs of D Flip-Flops
-    wire [3:0] Qn;         // Complementary outputs of D Flip-Flops
-
-    // Instantiate D Flip-Flops
-    D_FlipFlop_Gates DFF0 (.D(next_number[0]), .CLK(clock), .RESET(reset), .Q(Q[0]), .Qn(Qn[0]));
-    D_FlipFlop_Gates DFF1 (.D(next_number[1]), .CLK(clock), .RESET(reset), .Q(Q[1]), .Qn(Qn[1]));
-    D_FlipFlop_Gates DFF2 (.D(next_number[2]), .CLK(clock), .RESET(reset), .Q(Q[2]), .Qn(Qn[2]));
-    D_FlipFlop_Gates DFF3 (.D(next_number[3]), .CLK(clock), .RESET(reset), .Q(Q[3]), .Qn(Qn[3]));
-
-    // Compute the next state
-    always @(posedge clock or posedge reset) begin
-        if (reset)
-            next_number <= 4'b0000;                // Reset counter to zero
-        else if (enable && Q < 4'b1111)
-            next_number <= Q + 1;                 // Increment the counter
-        else
-            next_number <= Q;                     // Hold current state
-    end
-
-    // Assign the output
-    assign number = Q;
-
-endmodule
-
-module D_FlipFlop_Gates (
-    input wire D,       // Data input
-    input wire CLK,     // Clock input
-    input wire RESET,   // Asynchronous reset
-    output wire Q,      // Output
-);
-
-    // Internal wires
-    wire D_n;       // NOT of D
-    wire CLK_n;     // NOT of CLK
-    wire R1, R2;    // Latch intermediate signals
-    wire S1, S2;    // Latch intermediate signals
-
-    // Reset logic
-    assign D_n = ~D;          // NOT D
-    assign CLK_n = ~CLK;      // NOT CLK
-
-    // Master latch
-    assign S1 = ~(D & CLK);   // Set condition
-    assign R1 = ~(D_n & CLK); // Reset condition
-
-    // Slave latch
-    assign S2 = ~(S1 & CLK_n);   // Set condition
-    assign R2 = ~(R1 & CLK_n);   // Reset condition
-
+  reg  [3:0] next_number;
+  wire [3:0] Q;
+  wire [3:0] Qn;
+  D_FlipFlop_Gates DFF0 (
+      .D(next_number[0]),
+      .CLK(clock),
+      .RESET(reset),
+      .Q(Q[0]),
+      .Qn(Qn[0])
+  );
+  D_FlipFlop_Gates DFF1 (
+      .D(next_number[1]),
+      .CLK(clock),
+      .RESET(reset),
+      .Q(Q[1]),
+      .Qn(Qn[1])
+  );
+  D_FlipFlop_Gates DFF2 (
+      .D(next_number[2]),
+      .CLK(clock),
+      .RESET(reset),
+      .Q(Q[2]),
+      .Qn(Qn[2])
+  );
+  D_FlipFlop_Gates DFF3 (
+      .D(next_number[3]),
+      .CLK(clock),
+      .RESET(reset),
+      .Q(Q[3]),
+      .Qn(Qn[3])
+  );
+  always @(posedge clock or posedge reset) begin
+    if (reset) next_number <= 4'b0000;
+    else if (enable) next_number <= next_number + 1;
+  end
+  assign number = next_number;
 endmodule
 
 module money_counter (
@@ -82,39 +69,35 @@ module money_counter (
     output error
 );
   wire [3:0] coin_500, coin_1000, coin_2000, cash_5000;
-
   Counter coin500 (
-      .clock(clock),
-      .reset(reset),
+      .clock (clock),
+      .reset (reset),
       .enable(coin == 2'b00),
       .number(coin_500)
   );
   Counter coin1000 (
-      .clock(clock),
-      .reset(reset),
+      .clock (clock),
+      .reset (reset),
       .enable(coin == 2'b01),
       .number(coin_1000)
   );
   Counter coin2000 (
-      .clock(clock),
-      .reset(reset),
+      .clock (clock),
+      .reset (reset),
       .enable(coin == 2'b10),
       .number(coin_2000)
   );
   Counter cash5000 (
-      .clock(clock),
-      .reset(reset),
+      .clock (clock),
+      .reset (reset),
       .enable(coin == 2'b11),
       .number(cash_5000)
   );
-
   assign error = 0;
-
   assign count_500 = coin_500;
   assign count_1000 = coin_1000;
   assign count_2000 = coin_2000;
   assign count_5000 = cash_5000;
-
   assign total = (coin_500 * 5) + (coin_1000 * 10) + (coin_2000 * 20) + (cash_5000 * 50);
 endmodule
 
@@ -122,8 +105,7 @@ module product_enable_generator (
     input [2:0] product_id,
     output reg [7:0] product_enable
 );
-  always @(*) 
-  begin
+  always @(*) begin
     product_enable = 8'b00000000;
     product_enable[product_id] = 1;
   end
@@ -135,14 +117,12 @@ module comparator_5 (
 );
   assign is_less_than_5 = (in_stock_amount < 5);
 endmodule
-
 module comparator_10 (
     input [3:0] product_count,
     output is_greater_than_10
 );
   assign is_greater_than_10 = (product_count > 10);
 endmodule
-
 module intelligent_discount (
     input  [15:0] real_amount,
     input  [ 3:0] product_count,
@@ -159,7 +139,6 @@ module intelligent_discount (
   assign divided_by_10 = (multiplied_by_9 >> 3) + (multiplied_by_9 >> 4);
   assign discounted_amount = (is_greater_than_10) ? divided_by_10 : real_amount;
 endmodule
-
 module decrement_counter (
     input clock,
     input reset,
@@ -171,7 +150,6 @@ module decrement_counter (
     else if (enable && number > 0) number <= number - 1;
   end
 endmodule
-
 module increment_counter (
     input clock,
     input reset,
@@ -183,7 +161,6 @@ module increment_counter (
     else if (enable && number < 5'b01011) number <= number + 1;
   end
 endmodule
-
 module product_manager (
     input clock,
     input reset,
@@ -228,14 +205,14 @@ module product_manager (
   wire [4:0] incremented_purchase_count;
   wire is_less_than_5;
   decrement_counter inventory_decrement (
-      .clock(clock),
-      .reset(reset),
+      .clock (clock),
+      .reset (reset),
       .enable(didBuy && inventory[product_id] > 0 && quantity > 0),
       .number(decremented_inventory)
   );
   increment_counter purchase_increment (
-      .clock(clock),
-      .reset(reset),
+      .clock (clock),
+      .reset (reset),
       .enable(didBuy && quantity > 0),
       .number(incremented_purchase_count)
   );
@@ -278,7 +255,6 @@ module product_manager (
     product_purchase_count <= incremented_purchase_count;
   end
 endmodule
-
 module fsm (
     input clock,
     input reset,
@@ -315,7 +291,6 @@ module fsm (
     enable_dispense = (state == DISPENSE);
   end
 endmodule
-
 module feedback_storage (
     input clock,
     input reset,
@@ -356,7 +331,6 @@ module feedback_storage (
   assign stored_feedback_7 = stored_feedback[7];
   assign error = (feedback < 3'b001 || feedback > 3'b101 || product_id >= 8);
 endmodule
-
 module display (
     input [15:0] total_money,
     input [ 7:0] product_price,
@@ -383,7 +357,6 @@ module display (
     $display("");
   end
 endmodule
-
 module tb;
   reg clock;
   reg reset;
@@ -472,7 +445,7 @@ module tb;
     #5 clock = ~clock;
   end
   initial begin
-    clock   = 0;
+    clock = 0;
     reset = 0;
     reset = 1;
     #10;
