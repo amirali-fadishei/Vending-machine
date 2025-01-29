@@ -175,6 +175,101 @@ module increment_counter (
   end
 endmodule
 
+// module product_manager (
+//     input clock,
+//     input reset,
+//     input [2:0] product_id,
+//     input didBuy,
+//     input [3:0] quantity,
+//     output [4:0] in_stock_amount,
+//     output low_stock,
+//     output error,
+//     output [7:0] product_price,
+//     output reg [15:0] total_price,
+//     output reg [4:0] product_purchase_count
+// );
+//   reg [4:0] inventory[7:0];
+//   reg [7:0] prices[7:0];
+//   reg [4:0] purchase_count[7:0];
+//   reg [15:0] selected_products_total;
+//   reg [3:0] total_buy_count;
+//   parameter LOW_THRESHOLD = 5'b00101;
+//   parameter INITIAL_STOCK = 5'b01010;
+//   initial begin
+//     prices[0] = 10;
+//     prices[1] = 15;
+//     prices[2] = 20;
+//     prices[3] = 25;
+//     prices[4] = 30;
+//     prices[5] = 35;
+//     prices[6] = 40;
+//     prices[7] = 45;
+//     total_buy_count = 0;
+//     selected_products_total = 0;
+//     inventory[0] = INITIAL_STOCK;
+//     inventory[1] = INITIAL_STOCK;
+//     inventory[2] = INITIAL_STOCK;
+//     inventory[3] = INITIAL_STOCK;
+//     inventory[4] = INITIAL_STOCK;
+//     inventory[5] = INITIAL_STOCK;
+//     inventory[6] = INITIAL_STOCK;
+//     inventory[7] = INITIAL_STOCK;
+//   end
+//   wire [4:0] decremented_inventory;
+//   wire [4:0] incremented_purchase_count;
+//   wire is_less_than_5;
+//   decrement_counter inventory_decrement (
+//       .clock (clock),
+//       .reset (reset),
+//       .enable(didBuy && inventory[product_id] > 0 && quantity > 0),
+//       .number(decremented_inventory)
+//   );
+//   increment_counter purchase_increment (
+//       .clock (clock),
+//       .reset (reset),
+//       .enable(didBuy && quantity > 0),
+//       .number(incremented_purchase_count)
+//   );
+//   comparator_5 compare_with_5 (
+//       .in_stock_amount(inventory[product_id]),
+//       .is_less_than_5 (is_less_than_5)
+//   );
+//   assign low_stock = is_less_than_5;
+//   assign error = (product_id >= 8 || inventory[product_id] == 0);
+//   assign product_price = (error) ? 8'd0 : prices[product_id];
+//   assign in_stock_amount = inventory[product_id];
+//   always @(posedge clock or posedge reset) begin
+//     if (reset) begin
+//       total_buy_count <= 0;
+//       selected_products_total <= 0;
+//       purchase_count[0] <= 0;
+//       purchase_count[1] <= 0;
+//       purchase_count[2] <= 0;
+//       purchase_count[3] <= 0;
+//       purchase_count[4] <= 0;
+//       purchase_count[5] <= 0;
+//       purchase_count[6] <= 0;
+//       purchase_count[7] <= 0;
+//       total_price <= 0;
+//     end else if (didBuy && inventory[product_id] > 0) begin
+//       total_buy_count <= total_buy_count + quantity;
+//       selected_products_total <= selected_products_total + (prices[product_id] * quantity);
+//     end
+//   end
+//   wire [15:0] discounted_total;
+//   intelligent_discount discount_logic (
+//       .real_amount(selected_products_total),
+//       .product_count(total_buy_count),
+//       .discounted_amount(discounted_total)
+//   );
+//   always @(*) begin
+//     total_price = discounted_total;
+//     inventory[product_id] <= decremented_inventory;
+//     purchase_count[product_id] <= incremented_purchase_count;
+//     product_purchase_count <= incremented_purchase_count;
+//   end
+// endmodule
+
 module product_manager (
     input clock,
     input reset,
@@ -215,13 +310,35 @@ module product_manager (
     inventory[6] = INITIAL_STOCK;
     inventory[7] = INITIAL_STOCK;
   end
+  wire [7:0] product_enable;
   wire [4:0] decremented_inventory;
   wire [4:0] incremented_purchase_count;
   wire is_less_than_5;
+  product_enable_generator decoder (
+      .product_id (product_id),
+      .product_enable (product_enable)
+  );
+
+  logic [2:0] index;
+
+  always @(*) begin
+      case (product_enable)
+          8'b00000001: index = 3'd0;
+          8'b00000010: index = 3'd1;
+          8'b00000100: index = 3'd2;
+          8'b00001000: index = 3'd3;
+          8'b00010000: index = 3'd4;
+          8'b00100000: index = 3'd5;
+          8'b01000000: index = 3'd6;
+          8'b10000000: index = 3'd7;
+          default:     index = 3'dX;
+      endcase
+  end
+
   decrement_counter inventory_decrement (
       .clock (clock),
       .reset (reset),
-      .enable(didBuy && inventory[product_id] > 0 && quantity > 0),
+      .enable(didBuy && inventory[index] > 0 && quantity > 0),
       .number(decremented_inventory)
   );
   increment_counter purchase_increment (
@@ -231,13 +348,13 @@ module product_manager (
       .number(incremented_purchase_count)
   );
   comparator_5 compare_with_5 (
-      .in_stock_amount(inventory[product_id]),
+      .in_stock_amount(inventory[index]),
       .is_less_than_5 (is_less_than_5)
   );
   assign low_stock = is_less_than_5;
-  assign error = (product_id >= 8 || inventory[product_id] == 0);
-  assign product_price = (error) ? 8'd0 : prices[product_id];
-  assign in_stock_amount = inventory[product_id];
+  assign error = (index >= 8 || inventory[index] == 0);
+  assign product_price = (error) ? 8'd0 : prices[index];
+  assign in_stock_amount = inventory[index];
   always @(posedge clock or posedge reset) begin
     if (reset) begin
       total_buy_count <= 0;
@@ -251,9 +368,9 @@ module product_manager (
       purchase_count[6] <= 0;
       purchase_count[7] <= 0;
       total_price <= 0;
-    end else if (didBuy && inventory[product_id] > 0) begin
+    end else if (didBuy && inventory[index] > 0) begin
       total_buy_count <= total_buy_count + quantity;
-      selected_products_total <= selected_products_total + (prices[product_id] * quantity);
+      selected_products_total <= selected_products_total + (prices[index] * quantity);
     end
   end
   wire [15:0] discounted_total;
@@ -264,8 +381,8 @@ module product_manager (
   );
   always @(*) begin
     total_price = discounted_total;
-    inventory[product_id] <= decremented_inventory;
-    purchase_count[product_id] <= incremented_purchase_count;
+    inventory[index] <= decremented_inventory;
+    purchase_count[index] <= incremented_purchase_count;
     product_purchase_count <= incremented_purchase_count;
   end
 endmodule
