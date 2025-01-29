@@ -1,15 +1,73 @@
+// module Counter (
+//     input clock,
+//     input reset,
+//     input enable,
+//     output [3:0] number
+// );
+//   reg [3:0] next_number;
+//   always @(posedge clock or posedge reset) begin
+//     if (reset) next_number <= 4'b0000;
+//     else if (enable && next_number < 4'b1111) next_number <= next_number + 1;
+//   end
+//   assign number = next_number;
+// endmodule
+
 module Counter (
     input clock,
     input reset,
     input enable,
     output [3:0] number
 );
-  reg [3:0] next_number;
-  always @(posedge clock or posedge reset) begin
-    if (reset) next_number <= 4'b0000;
-    else if (enable && next_number < 4'b1111) next_number <= next_number + 1;
-  end
-  assign number = next_number;
+    reg [3:0] next_number; // For calculating the next state
+    wire [3:0] Q;          // Outputs of D Flip-Flops
+    wire [3:0] Qn;         // Complementary outputs of D Flip-Flops
+
+    // Instantiate D Flip-Flops
+    D_FlipFlop_Gates DFF0 (.D(next_number[0]), .CLK(clock), .RESET(reset), .Q(Q[0]), .Qn(Qn[0]));
+    D_FlipFlop_Gates DFF1 (.D(next_number[1]), .CLK(clock), .RESET(reset), .Q(Q[1]), .Qn(Qn[1]));
+    D_FlipFlop_Gates DFF2 (.D(next_number[2]), .CLK(clock), .RESET(reset), .Q(Q[2]), .Qn(Qn[2]));
+    D_FlipFlop_Gates DFF3 (.D(next_number[3]), .CLK(clock), .RESET(reset), .Q(Q[3]), .Qn(Qn[3]));
+
+    // Compute the next state
+    always @(posedge clock or posedge reset) begin
+        if (reset)
+            next_number <= 4'b0000;                // Reset counter to zero
+        else if (enable && Q < 4'b1111)
+            next_number <= Q + 1;                 // Increment the counter
+        else
+            next_number <= Q;                     // Hold current state
+    end
+
+    // Assign the output
+    assign number = Q;
+
+endmodule
+
+module D_FlipFlop_Gates (
+    input wire D,       // Data input
+    input wire CLK,     // Clock input
+    input wire RESET,   // Asynchronous reset
+    output wire Q,      // Output
+);
+
+    // Internal wires
+    wire D_n;       // NOT of D
+    wire CLK_n;     // NOT of CLK
+    wire R1, R2;    // Latch intermediate signals
+    wire S1, S2;    // Latch intermediate signals
+
+    // Reset logic
+    assign D_n = ~D;          // NOT D
+    assign CLK_n = ~CLK;      // NOT CLK
+
+    // Master latch
+    assign S1 = ~(D & CLK);   // Set condition
+    assign R1 = ~(D_n & CLK); // Reset condition
+
+    // Slave latch
+    assign S2 = ~(S1 & CLK_n);   // Set condition
+    assign R2 = ~(R1 & CLK_n);   // Reset condition
+
 endmodule
 
 module money_counter (
