@@ -66,9 +66,10 @@ module money_counter (
     output [3:0] count_1000,
     output [3:0] count_2000,
     output [3:0] count_5000,
-    output error
+    output reg error
 );
   wire [3:0] coin_500, coin_1000, coin_2000, cash_5000;
+
   Counter coin500 (
       .clock (clock),
       .reset (reset),
@@ -93,12 +94,20 @@ module money_counter (
       .enable(coin == 2'b11),
       .number(cash_5000)
   );
-  assign error = 0;
+
   assign count_500 = coin_500;
   assign count_1000 = coin_1000;
   assign count_2000 = coin_2000;
   assign count_5000 = cash_5000;
   assign total = (coin_500 * 5) + (coin_1000 * 10) + (coin_2000 * 20) + (cash_5000 * 50);
+
+  always @(*) begin
+    if (reset) error <= 0;
+    else if (coin !== 2'b00 && coin !== 2'b01 && coin !== 2'b10 && coin !== 2'b11) begin
+      error <= 1;
+      $display("money is not supported");
+    end else error <= 0;
+  end
 endmodule
 
 module product_enable_generator (
@@ -117,12 +126,14 @@ module comparator_5 (
 );
   assign is_less_than_5 = (in_stock_amount < 5);
 endmodule
+
 module comparator_10 (
     input [3:0] product_count,
     output is_greater_than_10
 );
   assign is_greater_than_10 = (product_count > 10);
 endmodule
+
 module intelligent_discount (
     input  [15:0] real_amount,
     input  [ 3:0] product_count,
@@ -139,6 +150,7 @@ module intelligent_discount (
   assign divided_by_10 = (multiplied_by_9 >> 3) + (multiplied_by_9 >> 4);
   assign discounted_amount = (is_greater_than_10) ? divided_by_10 : real_amount;
 endmodule
+
 module decrement_counter (
     input clock,
     input reset,
@@ -150,6 +162,7 @@ module decrement_counter (
     else if (enable && number > 0) number <= number - 1;
   end
 endmodule
+
 module increment_counter (
     input clock,
     input reset,
@@ -161,6 +174,7 @@ module increment_counter (
     else if (enable && number < 5'b01011) number <= number + 1;
   end
 endmodule
+
 module product_manager (
     input clock,
     input reset,
@@ -255,6 +269,7 @@ module product_manager (
     product_purchase_count <= incremented_purchase_count;
   end
 endmodule
+
 module fsm (
     input clock,
     input reset,
@@ -291,6 +306,7 @@ module fsm (
     enable_dispense = (state == DISPENSE);
   end
 endmodule
+
 module feedback_storage (
     input clock,
     input reset,
@@ -331,6 +347,7 @@ module feedback_storage (
   assign stored_feedback_7 = stored_feedback[7];
   assign error = (feedback < 3'b001 || feedback > 3'b101 || product_id >= 8);
 endmodule
+
 module display (
     input [15:0] total_money,
     input [ 7:0] product_price,
@@ -357,6 +374,7 @@ module display (
     $display("");
   end
 endmodule
+
 module tb;
   reg clock;
   reg reset;
@@ -463,7 +481,6 @@ module tb;
     #10;
     coin = 2'bxx;
     #10;
-    $display("Total Money: %d, Error: %b", total, error);
     $display("");
     money_validation = 1;
     #10;
