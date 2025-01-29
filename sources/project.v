@@ -101,7 +101,7 @@ module money_counter (
   assign count_5000 = cash_5000;
   assign total = (coin_500 * 5) + (coin_1000 * 10) + (coin_2000 * 20) + (cash_5000 * 50);
 
-  always @(*) begin
+  always @(coin) begin
     if (reset) error <= 0;
     else if (coin !== 2'b00 && coin !== 2'b01 && coin !== 2'b10 && coin !== 2'b11) begin
       error <= 1;
@@ -114,7 +114,7 @@ module product_enable_generator (
     input [2:0] product_id,
     output reg [7:0] product_enable
 );
-  always @(*) begin
+  always @(product_id) begin
     product_enable = 8'b00000000;
     product_enable[product_id] = 1;
   end
@@ -384,7 +384,7 @@ module fsm (
     else state <= state_reg;
   end
 
-  always @(*) begin
+  always @(state) begin
     case (state)
       IDLE: begin
         if (money_validation) state_next = SELECT;
@@ -403,7 +403,7 @@ module fsm (
     endcase
   end
 
-  always @(*) begin
+  always @(state) begin
     enable_payment  = (state == PAY);
     enable_dispense = (state == DISPENSE);
   end
@@ -458,11 +458,11 @@ module display (
     input [ 2:0] product_id,
     input [ 4:0] product_count,
     input [ 4:0] product_purchase_count,
-    input [3:0] count_500,
-    input [3:0] count_1000,
-    input [3:0] count_2000,
-    input [3:0] count_5000,
-    input [3:0] quantity
+    input [ 3:0] count_500,
+    input [ 3:0] count_1000,
+    input [ 3:0] count_2000,
+    input [ 3:0] count_5000,
+    input [ 3:0] quantity
 );
   always @(*) begin
     case (fsm_state)
@@ -563,29 +563,33 @@ module tb;
       .stored_feedback_7(stored_feedback_7)
   );
   display display_inst (
-    .total_money(total),
-    .product_price(product_price),
-    .total_price(total_price),
-    .fsm_state(state),
-    .product_id(product_id),
-    .product_count(in_stock_amount),
-    .product_purchase_count(product_purchase_count),
-    .count_500(count_500),
-    .count_1000(count_1000),
-    .count_2000(count_2000),
-    .count_5000(count_5000),
-    .quantity(quantity)
-);
+      .total_money(total),
+      .product_price(product_price),
+      .total_price(total_price),
+      .fsm_state(state),
+      .product_id(product_id),
+      .product_count(in_stock_amount),
+      .product_purchase_count(product_purchase_count),
+      .count_500(count_500),
+      .count_1000(count_1000),
+      .count_2000(count_2000),
+      .count_5000(count_5000),
+      .quantity(quantity)
+  );
   always begin
     #5 clock = ~clock;
   end
   initial begin
     clock = 0;
     reset = 0;
+
     reset = 1;
     #10;
     reset = 0;
+
     $display("Cycle 1: Inserting coins...");
+    $display("");
+
     coin = 2'b00;
     #10;
     coin = 2'b00;
@@ -598,58 +602,72 @@ module tb;
     #10;
     coin = 2'bxx;
     #10;
+
     $display("");
+
     money_validation = 1;
     #10;
     money_validation = 0;
-    #10;
-    product_id = 3'b001;
-    quantity   = 4'b0001;
+
     $display("Testing Discount - Adding Products...");
-    didBuy = 1;
-    #10;
-    didBuy = 0;
-    #10;
-    didBuy = 1;
-    #10;
-    didBuy = 0;
-    #10;
-    didBuy = 1;
-    #10;
-    didBuy = 0;
-    #10;
-    didBuy = 1;
-    #10;
-    didBuy = 0;
-    #10;
-    didBuy = 1;
-    #10;
-    didBuy = 0;
-    #10;
+    $display("");
+
     product_id = 3'b001;
-    quantity = 4'b0001;
+    #10;
+    quantity = 4'b0101;
+
     didBuy = 1;
     #10;
     didBuy = 0;
     #10;
-    $display("Total Price with Discount: %d", total_price);
-    $display("");
-    $display("Low stock detected for product %d: %b", product_id, low_stock);
-    $display("");
+    didBuy = 1;
+    #10;
+    didBuy = 0;
+    #10;
+    didBuy = 1;
+    #10;
+    didBuy = 0;
+    #10;
+    didBuy = 1;
+    #10;
+    didBuy = 0;
+    #10;
+    didBuy = 1;
+    #10;
+    didBuy = 0;
+    #10;
+
+    product_id = 3'b001;
+    #10;
+    quantity = 4'b0001;
+    #10;
+    didBuy = 1;
+    #10;
+    didBuy = 0;
+    #10;
+
     feedback = 3'b001;
     #10;
+
     $display("Stored Feedback for product 1: %d", stored_feedback_1);
+    $display("");
+
     feedback = 3'b111;
     #10;
+
     $display("Feedback Error: %b", error_feedback);
+    $display("");
+
     is_product_selected = 1;
     #10;
     is_product_selected = 0;
     #10;
+
     is_enough_money = 1;
     #10;
     is_enough_money = 0;
     #10;
+
     $finish;
   end
 endmodule
