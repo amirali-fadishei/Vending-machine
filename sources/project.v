@@ -188,6 +188,229 @@ module JK_FlipFlop (
   end
 endmodule
 
+// module UpDown_Counter (
+//     input wire CLK,
+//     input wire RESET,
+//     input wire enable,
+//     input wire mode,  // 1 for up-counter, 0 for down-counter
+//     output wire [4:0] Q
+// );
+
+//     // Declare 5 JK flip-flops
+//     wire Q0, Q1, Q2, Q3, Q4;
+//     wire J0, K0, J1, K1, J2, K2, J3, K3, J4, K4;
+//     wire enable_clk;  // Intermediate signal for clock enable
+
+//     // Generate clock for flip-flops based on enable signal
+//     assign enable_clk = CLK & enable;
+
+//     assign J0 = 1;
+//     assign K0 = 1;
+//     JK_FlipFlop ff0 (
+//         .J(J0),
+//         .K(K0),
+//         .CLK(enable_clk),
+//         .RESET(RESET),
+//         .Q(Q0)
+//     );
+
+//     assign J1 = (mode) ? Q0 : ~Q0;
+//     assign K1 = (mode) ? Q0 : ~Q0;
+//     JK_FlipFlop ff1 (
+//         .J(J1),
+//         .K(K1),
+//         .CLK(enable_clk),
+//         .RESET(RESET),
+//         .Q(Q1)
+//     );
+
+//     assign J2 = (mode) ? (Q0 & Q1) : (~Q0 & ~Q1);
+//     assign K2 = (mode) ? (Q0 & Q1) : (~Q0 & ~Q1);
+//     JK_FlipFlop ff2 (
+//         .J(J2),
+//         .K(K2),
+//         .CLK(enable_clk),
+//         .RESET(RESET),
+//         .Q(Q2)
+//     );
+
+//     assign J3 = (mode) ? (Q0 & Q1 & Q2) : (~Q0 & ~Q1 & ~Q2);
+//     assign K3 = (mode) ? (Q0 & Q1 & Q2) : (~Q0 & ~Q1 & ~Q2);
+//     JK_FlipFlop ff3 (
+//         .J(J3),
+//         .K(K3),
+//         .CLK(enable_clk),
+//         .RESET(RESET),
+//         .Q(Q3)
+//     );
+
+//     assign J4 = (mode) ? (Q0 & Q1 & Q2 & Q3) : (~Q0 & ~Q1 & ~Q2 & ~Q3);
+//     assign K4 = (mode) ? (Q0 & Q1 & Q2 & Q3) : (~Q0 & ~Q1 & ~Q2 & ~Q3);
+//     JK_FlipFlop ff4 (
+//         .J(J4),
+//         .K(K4),
+//         .CLK(enable_clk),
+//         .RESET(RESET),
+//         .Q(Q4)
+//     );
+
+//     // Output 5-bit counter
+//     assign Q = {Q4, Q3, Q2, Q1, Q0};
+// endmodule
+
+module UpCounter (
+    input wire CLK,
+    input wire RESET,
+    input wire enable,
+    output wire [4:0] number
+);
+
+    // Declare 5 JK flip-flops for the up-counter
+    wire Q0, Q1, Q2, Q3, Q4;
+    wire J0, K0, J1, K1, J2, K2, J3, K3, J4, K4;
+    wire enable_clk;  // Intermediate signal for clock enable
+
+    // Generate clock for flip-flops based on enable signal
+    assign enable_clk = CLK & enable;
+
+    // JK flip-flop for Q0
+    assign J0 = 1;
+    assign K0 = 1;
+    JK_FlipFlop ff0 (
+        .J(J0),
+        .K(K0),
+        .CLK(enable_clk),
+        .RESET(RESET),
+        .Q(Q0)
+    );
+
+    // JK flip-flop for Q1 (counts up to 10)
+    assign J1 = (Q0) ? ~Q1 : Q1; 
+    assign K1 = (Q0) ? Q1 : ~Q1; 
+    JK_FlipFlop ff1 (
+        .J(J1),
+        .K(K1),
+        .CLK(enable_clk),
+        .RESET(RESET),
+        .Q(Q1)
+    );
+
+    // JK flip-flop for Q2
+    assign J2 = (Q0 & Q1) ? ~Q2 : Q2;
+    assign K2 = (Q0 & Q1) ? Q2 : ~Q2;
+    JK_FlipFlop ff2 (
+        .J(J2),
+        .K(K2),
+        .CLK(enable_clk),
+        .RESET(RESET),
+        .Q(Q2)
+    );
+
+    // JK flip-flop for Q3
+    assign J3 = (Q0 & Q1 & Q2) ? ~Q3 : Q3;
+    assign K3 = (Q0 & Q1 & Q2) ? Q3 : ~Q3;
+    JK_FlipFlop ff3 (
+        .J(J3),
+        .K(K3),
+        .CLK(enable_clk),
+        .RESET(RESET),
+        .Q(Q3)
+    );
+
+    // JK flip-flop for Q4
+    assign J4 = (Q0 & Q1 & Q2 & Q3) ? ~Q4 : Q4;
+    assign K4 = (Q0 & Q1 & Q2 & Q3) ? Q4 : ~Q4;
+    JK_FlipFlop ff4 (
+        .J(J4),
+        .K(K4),
+        .CLK(enable_clk),
+        .RESET(RESET),
+        .Q(Q4)
+    );
+
+    // Output 5-bit counter (counts from 00000 to 01010)
+    assign number = {Q4, Q3, Q2, Q1, Q0};
+
+    assign number = (number > 5'b01010) ? 5'b01010 : number;
+endmodule
+
+
+module DownCounter (
+    input wire CLK,
+    input wire RESET,
+    input wire enable,
+    output wire [4:0] number
+);
+
+    // Declare 5 JK flip-flops for the down-counter
+    wire Q0, Q1, Q2, Q3, Q4;
+    wire J0, K0, J1, K1, J2, K2, J3, K3, J4, K4;
+    wire enable_clk;  // Intermediate signal for clock enable
+
+    // Generate clock for flip-flops based on enable signal
+    assign enable_clk = CLK & enable;
+
+    // JK flip-flop for Q0
+    assign J0 = 1;
+    assign K0 = 1;
+    JK_FlipFlop ff0 (
+        .J(J0),
+        .K(K0),
+        .CLK(enable_clk),
+        .RESET(RESET),
+        .Q(Q0)
+    );
+
+    // JK flip-flop for Q1 (counts down from 10)
+    assign J1 = (~Q0) ? Q1 : ~Q1; 
+    assign K1 = (~Q0) ? ~Q1 : Q1; 
+    JK_FlipFlop ff1 (
+        .J(J1),
+        .K(K1),
+        .CLK(enable_clk),
+        .RESET(RESET),
+        .Q(Q1)
+    );
+
+    // JK flip-flop for Q2
+    assign J2 = (~Q0 & ~Q1) ? Q2 : ~Q2;
+    assign K2 = (~Q0 & ~Q1) ? ~Q2 : Q2;
+    JK_FlipFlop ff2 (
+        .J(J2),
+        .K(K2),
+        .CLK(enable_clk),
+        .RESET(RESET),
+        .Q(Q2)
+    );
+
+    // JK flip-flop for Q3
+    assign J3 = (~Q0 & ~Q1 & ~Q2) ? Q3 : ~Q3;
+    assign K3 = (~Q0 & ~Q1 & ~Q2) ? ~Q3 : Q3;
+    JK_FlipFlop ff3 (
+        .J(J3),
+        .K(K3),
+        .CLK(enable_clk),
+        .RESET(RESET),
+        .Q(Q3)
+    );
+
+    // JK flip-flop for Q4
+    assign J4 = (~Q0 & ~Q1 & ~Q2 & ~Q3) ? Q4 : ~Q4;
+    assign K4 = (~Q0 & ~Q1 & ~Q2 & ~Q3) ? ~Q4 : Q4;
+    JK_FlipFlop ff4 (
+        .J(J4),
+        .K(K4),
+        .CLK(enable_clk),
+        .RESET(RESET),
+        .Q(Q4)
+    );
+
+    // Output 5-bit counter (counts from 01010 to 00000)
+    assign number = {Q4, Q3, Q2, Q1, Q0};
+
+    assign number = (number > 5'b01010) ? 5'b01010 : number;
+endmodule
+
 module up_down_counter (
     input clock,
     input reset,
@@ -199,11 +422,6 @@ module up_down_counter (
   wire [4:0] temp_up;
   wire [4:0] temp_down;
   wire [4:0] q_state;
-
-  assign temp_up = q_state + 1;
-  assign temp_down = q_state - 1;
-  assign next_number = (reset) ? 5'b00000 : (enable ? (mode ? temp_up : temp_down) : q_state);
-  assign number = q_state;
 
   genvar i;
   generate
@@ -217,6 +435,9 @@ module up_down_counter (
       );
     end
   endgenerate
+
+  assign next_number = (reset ? (mode ? 5'b00000 : 5'b01010) : (enable ? (mode ? q_state + 1 : q_state - 1) : q_state));
+  assign number = q_state;
 endmodule
 
 module product_manager (
@@ -270,7 +491,8 @@ module product_manager (
 
   logic [2:0] index;
 
-  always @(*) begin
+  // always @(*) begin
+  always @(product_enable) begin
       case (product_enable)
           8'b00000001: index = 3'd0;
           8'b00000010: index = 3'd1;
@@ -290,11 +512,10 @@ module product_manager (
   //     .enable(didBuy && inventory[index] > 0 && quantity > 0),
   //     .number(decremented_inventory)
   // );
-  up_down_counter inventory_decrement (
-      .clock (clock),
-      .reset (reset),
+  DownCounter inventory_decrement (
+      .CLK (clock),
+      .RESET (reset),
       .enable(didBuy && inventory[index] > 0 && quantity > 0),
-      .mode(1'b0),
       .number(decremented_inventory)
   );
   // increment_counter purchase_increment (
@@ -303,11 +524,10 @@ module product_manager (
   //     .enable(didBuy && quantity > 0),
   //     .number(incremented_purchase_count)
   // );
-  up_down_counter purchase_increment (
-      .clock (clock),
-      .reset (reset),
+  UpCounter purchase_increment (
+      .CLK (clock),
+      .RESET (reset),
       .enable(didBuy && quantity > 0),
-      .mode(1'b1),
       .number(incremented_purchase_count)
   );
   comparator_5 compare_with_5 (
@@ -342,7 +562,7 @@ module product_manager (
       .product_count(total_buy_count),
       .discounted_amount(discounted_total)
   );
-  always @(*) begin
+  always @(discounted_total or decremented_inventory or incremented_purchase_count) begin
     total_price = discounted_total;
     inventory[index] <= decremented_inventory;
     purchase_count[index] <= incremented_purchase_count;
