@@ -176,11 +176,11 @@ module increment_counter (
 endmodule
 
 module JK_FlipFlop (
-    input wire J,
-    input wire K,
-    input wire CLK,
-    input wire RESET,
-    output reg Q
+    input  wire J,
+    input  wire K,
+    input  wire CLK,
+    input  wire RESET,
+    output reg  Q
 );
   always @(posedge CLK or posedge RESET) begin
     if (RESET) Q <= 0;
@@ -192,7 +192,7 @@ module up_down_counter (
     input clock,
     input reset,
     input enable,
-    input mode, // 1 for up, 0 for down
+    input mode,  // 1 for up, 0 for down
     output wire [4:0] number
 );
   wire [4:0] next_number;
@@ -209,11 +209,11 @@ module up_down_counter (
   generate
     for (i = 0; i < 5; i = i + 1) begin : flip_flops
       JK_FlipFlop jkff (
-        .J(next_number[i]),
-        .K(~next_number[i]),
-        .CLK(clock),
-        .RESET(reset),
-        .Q(q_state[i])
+          .J(next_number[i]),
+          .K(~next_number[i]),
+          .CLK(clock),
+          .RESET(reset),
+          .Q(q_state[i])
       );
     end
   endgenerate
@@ -264,24 +264,24 @@ module product_manager (
   wire [4:0] incremented_purchase_count;
   wire is_less_than_5;
   product_enable_generator decoder (
-      .product_id (product_id),
-      .product_enable (product_enable)
+      .product_id(product_id),
+      .product_enable(product_enable)
   );
 
   logic [2:0] index;
 
   always @(*) begin
-      case (product_enable)
-          8'b00000001: index = 3'd0;
-          8'b00000010: index = 3'd1;
-          8'b00000100: index = 3'd2;
-          8'b00001000: index = 3'd3;
-          8'b00010000: index = 3'd4;
-          8'b00100000: index = 3'd5;
-          8'b01000000: index = 3'd6;
-          8'b10000000: index = 3'd7;
-          default:     index = 3'dX;
-      endcase
+    case (product_enable)
+      8'b00000001: index = 3'd0;
+      8'b00000010: index = 3'd1;
+      8'b00000100: index = 3'd2;
+      8'b00001000: index = 3'd3;
+      8'b00010000: index = 3'd4;
+      8'b00100000: index = 3'd5;
+      8'b01000000: index = 3'd6;
+      8'b10000000: index = 3'd7;
+      default:     index = 3'dX;
+    endcase
   end
 
   // decrement_counter inventory_decrement (
@@ -294,7 +294,7 @@ module product_manager (
       .clock (clock),
       .reset (reset),
       .enable(didBuy && inventory[index] > 0 && quantity > 0),
-      .mode(1'b0),
+      .mode  (1'b0),
       .number(decremented_inventory)
   );
   // increment_counter purchase_increment (
@@ -307,7 +307,7 @@ module product_manager (
       .clock (clock),
       .reset (reset),
       .enable(didBuy && quantity > 0),
-      .mode(1'b1),
+      .mode  (1'b1),
       .number(incremented_purchase_count)
   );
   comparator_5 compare_with_5 (
@@ -457,7 +457,12 @@ module display (
     input [ 1:0] fsm_state,
     input [ 2:0] product_id,
     input [ 4:0] product_count,
-    input [ 4:0] product_purchase_count
+    input [ 4:0] product_purchase_count,
+    input [3:0] count_500,
+    input [3:0] count_1000,
+    input [3:0] count_2000,
+    input [3:0] count_5000,
+    input [3:0] quantity
 );
   always @(*) begin
     case (fsm_state)
@@ -469,6 +474,11 @@ module display (
     endcase
     $display("Selected Product ID: %d", product_id);
     $display("Product Price: %d", product_price);
+    $display("Quantity Selected: %d", quantity);
+    $display("500 Coins: %d (Total: %d)", count_500, count_500 * 5);
+    $display("1000 Coins: %d (Total: %d)", count_1000, count_1000 * 10);
+    $display("2000 Coins: %d (Total: %d)", count_2000, count_2000 * 20);
+    $display("5000 Coins: %d (Total: %d)", count_5000, count_5000 * 50);
     $display("Total Money Inserted: %d", total_money);
     $display("Total Cost: %d", total_price);
     $display("Product Purchase Count: %d", product_purchase_count);
@@ -553,14 +563,19 @@ module tb;
       .stored_feedback_7(stored_feedback_7)
   );
   display display_inst (
-      .total_money(total),
-      .product_price(product_price),
-      .total_price(total_price),
-      .fsm_state(state),
-      .product_id(product_id),
-      .product_count(in_stock_amount),
-      .product_purchase_count(product_purchase_count)
-  );
+    .total_money(total),
+    .product_price(product_price),
+    .total_price(total_price),
+    .fsm_state(state),
+    .product_id(product_id),
+    .product_count(in_stock_amount),
+    .product_purchase_count(product_purchase_count),
+    .count_500(count_500),
+    .count_1000(count_1000),
+    .count_2000(count_2000),
+    .count_5000(count_5000),
+    .quantity(quantity)
+);
   always begin
     #5 clock = ~clock;
   end
