@@ -1,3 +1,4 @@
+// FLIP FLOP
 module D_FlipFlop_Gates (
     input  wire D,
     input  wire CLK,
@@ -11,6 +12,21 @@ module D_FlipFlop_Gates (
     else Q <= D;
   end
 endmodule
+
+module JK_FlipFlop (
+    input  wire J,
+    input  wire K,
+    input  wire CLK,
+    input  wire RESET,
+    output reg  Q
+);
+  always @(posedge CLK or posedge RESET) begin
+    if (RESET) Q <= 0;
+    else Q <= (J & ~Q) | (~K & Q);
+  end
+endmodule
+
+// MONEY
 module Counter (
     input clock,
     input reset,
@@ -143,75 +159,38 @@ module intelligent_discount (
   assign divided_by_10 = multiplied_by_9 / 10;
   assign discounted_amount = (greater_than_10) ? divided_by_10 : real_amount;
 endmodule
-module JK_FlipFlop (
-    input  wire J,
-    input  wire K,
-    input  wire CLK,
-    input  wire RESET,
-    output reg  Q
-);
-  always @(posedge CLK or posedge RESET) begin
-    if (RESET) Q <= 0;
-    else Q <= (J & ~Q) | (~K & Q);
-  end
-endmodule
 module UpCounter (
     input wire CLK,
     input wire RESET,
     input wire enable,
     output wire [4:0] number
 );
-  wire Q0, Q1, Q2, Q3, Q4;
-  wire J0, K0, J1, K1, J2, K2, J3, K3, J4, K4;
-  wire enable_clk;
-  assign enable_clk = CLK & enable;
-  assign J0 = 1;
-  assign K0 = 1;
-  JK_FlipFlop ff0 (
-      .J(J0),
-      .K(K0),
-      .CLK(enable_clk),
-      .RESET(RESET),
-      .Q(Q0)
-  );
-  assign J1 = (Q0) ? ~Q1 : Q1;
-  assign K1 = (Q0) ? Q1 : ~Q1;
-  JK_FlipFlop ff1 (
-      .J(J1),
-      .K(K1),
-      .CLK(enable_clk),
-      .RESET(RESET),
-      .Q(Q1)
-  );
-  assign J2 = (Q0 & Q1) ? ~Q2 : Q2;
-  assign K2 = (Q0 & Q1) ? Q2 : ~Q2;
-  JK_FlipFlop ff2 (
-      .J(J2),
-      .K(K2),
-      .CLK(enable_clk),
-      .RESET(RESET),
-      .Q(Q2)
-  );
-  assign J3 = (Q0 & Q1 & Q2) ? ~Q3 : Q3;
-  assign K3 = (Q0 & Q1 & Q2) ? Q3 : ~Q3;
-  JK_FlipFlop ff3 (
-      .J(J3),
-      .K(K3),
-      .CLK(enable_clk),
-      .RESET(RESET),
-      .Q(Q3)
-  );
-  assign J4 = (Q0 & Q1 & Q2 & Q3) ? ~Q4 : Q4;
-  assign K4 = (Q0 & Q1 & Q2 & Q3) ? Q4 : ~Q4;
-  JK_FlipFlop ff4 (
-      .J(J4),
-      .K(K4),
-      .CLK(enable_clk),
-      .RESET(RESET),
-      .Q(Q4)
-  );
-  assign number = {Q4, Q3, Q2, Q1, Q0};
-  assign number = (number > 5'b01010) ? 5'b01010 : number;
+    wire Q0, Q1, Q2, Q3, Q4;
+    wire J0, K0, J1, K1, J2, K2, J3, K3, J4, K4;
+    wire enable_clk;
+    assign enable_clk = CLK & enable;
+    assign J0 = 1;
+    assign K0 = 1;
+    
+    JK_FlipFlop ff0 (.J(J0), .K(K0), .CLK(enable_clk), .RESET(RESET), .Q(Q0));
+    
+    assign J1 = (Q0) ? ~Q1 : Q1;
+    assign K1 = (Q0) ? Q1 : ~Q1;
+    JK_FlipFlop ff1 (.J(J1), .K(K1), .CLK(enable_clk), .RESET(RESET), .Q(Q1));
+    
+    assign J2 = (Q0 & Q1) ? ~Q2 : Q2;
+    assign K2 = (Q0 & Q1) ? Q2 : ~Q2;
+    JK_FlipFlop ff2 (.J(J2), .K(K2), .CLK(enable_clk), .RESET(RESET), .Q(Q2));
+    
+    assign J3 = (Q0 & Q1 & Q2) ? ~Q3 : Q3;
+    assign K3 = (Q0 & Q1 & Q2) ? Q3 : ~Q3;
+    JK_FlipFlop ff3 (.J(J3), .K(K3), .CLK(enable_clk), .RESET(RESET), .Q(Q3));
+    
+    assign J4 = (Q0 & Q1 & Q2 & Q3) ? ~Q4 : Q4;
+    assign K4 = (Q0 & Q1 & Q2 & Q3) ? Q4 : ~Q4;
+    JK_FlipFlop ff4 (.J(J4), .K(K4), .CLK(enable_clk), .RESET(RESET), .Q(Q4));
+    
+    assign number = {Q4, Q3, Q2, Q1, Q0};
 endmodule
 module DownCounter (
     input wire CLK,
@@ -270,32 +249,6 @@ module DownCounter (
   );
   assign number = {Q4, Q3, Q2, Q1, Q0};
   assign number = (number > 5'b01010) ? 5'b01010 : number;
-endmodule
-module up_down_counter (
-    input clock,
-    input reset,
-    input enable,
-    input mode,
-    output wire [4:0] number
-);
-  wire [4:0] next_number;
-  wire [4:0] temp_up;
-  wire [4:0] temp_down;
-  wire [4:0] q_state;
-  genvar i;
-  generate
-    for (i = 0; i < 5; i = i + 1) begin : flip_flops
-      JK_FlipFlop jkff (
-          .J(next_number[i]),
-          .K(~next_number[i]),
-          .CLK(clock),
-          .RESET(reset),
-          .Q(q_state[i])
-      );
-    end
-  endgenerate
-  assign next_number = (reset ? (mode ? 5'b00000 : 5'b01010) : (enable ? (mode ? q_state + 1 : q_state - 1) : q_state));
-  assign number = q_state;
 endmodule
 module product_manager (
     input clock,
