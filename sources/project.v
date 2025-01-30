@@ -46,42 +46,67 @@ module Counter (
     input enable,
     output [3:0] number
 );
-  reg  [3:0] next_number;
-  wire [3:0] Q;
-  wire [3:0] Qn;
-  D_FlipFlop_Gates DFF0 (
-      .D(next_number[0]),
-      .CLK(clock),
-      .RESET(reset),
-      .Q(Q[0]),
-      .Qn(Qn[0])
-  );
-  D_FlipFlop_Gates DFF1 (
-      .D(next_number[1]),
-      .CLK(clock),
-      .RESET(reset),
-      .Q(Q[1]),
-      .Qn(Qn[1])
-  );
-  D_FlipFlop_Gates DFF2 (
-      .D(next_number[2]),
-      .CLK(clock),
-      .RESET(reset),
-      .Q(Q[2]),
-      .Qn(Qn[2])
-  );
-  D_FlipFlop_Gates DFF3 (
-      .D(next_number[3]),
-      .CLK(clock),
-      .RESET(reset),
-      .Q(Q[3]),
-      .Qn(Qn[3])
-  );
-  always @(posedge clock or posedge reset) begin
-    if (reset) next_number <= 4'b0000;
-    else if (enable) next_number <= next_number + 1;
-  end
-  assign number = next_number;
+  // reg  [3:0] next_number;
+  // wire [3:0] Q;
+  // wire [3:0] Qn;
+  // D_FlipFlop_Gates DFF0 (
+  //     .D(next_number[0]),
+  //     .CLK(clock),
+  //     .RESET(reset),
+  //     .Q(Q[0]),
+  //     .Qn(Qn[0])
+  // );
+  // D_FlipFlop_Gates DFF1 (
+  //     .D(next_number[1]),
+  //     .CLK(clock),
+  //     .RESET(reset),
+  //     .Q(Q[1]),
+  //     .Qn(Qn[1])
+  // );
+  // D_FlipFlop_Gates DFF2 (
+  //     .D(next_number[2]),
+  //     .CLK(clock),
+  //     .RESET(reset),
+  //     .Q(Q[2]),
+  //     .Qn(Qn[2])
+  // );
+  // D_FlipFlop_Gates DFF3 (
+  //     .D(next_number[3]),
+  //     .CLK(clock),
+  //     .RESET(reset),
+  //     .Q(Q[3]),
+  //     .Qn(Qn[3])
+  // );
+  // always @(posedge clock or posedge reset) begin
+  //   if (reset) next_number <= 4'b0000;
+  //   else if (enable) next_number <= next_number + 1;
+  // end
+  // assign number = next_number;
+
+
+  wire Q0, Q1, Q2, Q3;
+  wire J0, K0, J1, K1, J2, K2, J3, K3;
+  wire enable_clk;
+
+  assign enable_clk = clock & enable;
+
+  assign J0 = 1;
+  assign K0 = 1;
+  JK_FlipFlop ff0 (.J(J0), .K(K0), .CLK(enable_clk), .RESET(reset), .Q(Q0));
+
+  assign J1 = (Q0);
+  assign K1 = (Q0);
+  JK_FlipFlop ff1 (.J(J1), .K(K1), .CLK(enable_clk), .RESET(reset), .Q(Q1));
+  
+  assign J2 = (Q0 & Q1);
+  assign K2 = (Q0 & Q1);
+  JK_FlipFlop ff2 (.J(J2), .K(K2), .CLK(enable_clk), .RESET(reset), .Q(Q2));
+  
+  assign J3 = (Q0 & Q1 & Q2);
+  assign K3 = (Q0 & Q1 & Q2);
+  JK_FlipFlop ff3 (.J(J3), .K(K3), .CLK(enable_clk), .RESET(reset), .Q(Q3));
+  
+  assign number = {Q3, Q2, Q1, Q0};
 endmodule
 module money_counter (
     input clock,
