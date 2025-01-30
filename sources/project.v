@@ -26,6 +26,19 @@ module JK_FlipFlop (
   end
 endmodule
 
+module JK_FlipFlop_r (
+    input  wire J,
+    input  wire K,
+    input  wire CLK,
+    input  wire RESET,
+    output reg  Q
+);
+  always @(posedge CLK or posedge RESET) begin
+    if (RESET) Q <= 1;
+    else Q <= (J & ~Q) | (~K & Q);
+  end
+endmodule
+
 // MONEY
 module Counter (
     input clock,
@@ -208,53 +221,31 @@ module DownCounter (
   wire J0, K0, J1, K1, J2, K2, J3, K3, J4, K4;
   wire enable_clk;
   assign enable_clk = CLK & enable;
+
+  // Reset when RESET is high or number reaches 10 (01010)
+  assign reset_condition = RESET | (number == 5'b11111);
+
   assign J0 = 1;
   assign K0 = 1;
-  JK_FlipFlop ff0 (
-      .J(J0),
-      .K(K0),
-      .CLK(enable_clk),
-      .RESET(RESET),
-      .Q(Q0)
-  );
-  assign J1 = (~Q0) ? Q1 : ~Q1;
-  assign K1 = (~Q0) ? ~Q1 : Q1;
-  JK_FlipFlop ff1 (
-      .J(J1),
-      .K(K1),
-      .CLK(enable_clk),
-      .RESET(RESET),
-      .Q(Q1)
-  );
-  assign J2 = (~Q0 & ~Q1) ? Q2 : ~Q2;
-  assign K2 = (~Q0 & ~Q1) ? ~Q2 : Q2;
-  JK_FlipFlop ff2 (
-      .J(J2),
-      .K(K2),
-      .CLK(enable_clk),
-      .RESET(RESET),
-      .Q(Q2)
-  );
-  assign J3 = (~Q0 & ~Q1 & ~Q2) ? Q3 : ~Q3;
-  assign K3 = (~Q0 & ~Q1 & ~Q2) ? ~Q3 : Q3;
-  JK_FlipFlop ff3 (
-      .J(J3),
-      .K(K3),
-      .CLK(enable_clk),
-      .RESET(RESET),
-      .Q(Q3)
-  );
-  assign J4 = (~Q0 & ~Q1 & ~Q2 & ~Q3) ? Q4 : ~Q4;
-  assign K4 = (~Q0 & ~Q1 & ~Q2 & ~Q3) ? ~Q4 : Q4;
-  JK_FlipFlop ff4 (
-      .J(J4),
-      .K(K4),
-      .CLK(enable_clk),
-      .RESET(RESET),
-      .Q(Q4)
-  );
+  JK_FlipFlop ff0 (.J(J0), .K(K0), .CLK(enable_clk), .RESET(reset_condition), .Q(Q0));
+
+  assign J1 = (~Q0);
+  assign K1 = (~Q0);
+  JK_FlipFlop_r ff1 (.J(J1), .K(K1), .CLK(enable_clk), .RESET(reset_condition), .Q(Q1));
+
+  assign J2 = (~Q0 & ~Q1);
+  assign K2 = (~Q0 & ~Q1);
+  JK_FlipFlop ff2 (.J(J2), .K(K2), .CLK(enable_clk), .RESET(reset_condition), .Q(Q2));
+
+  assign J3 = (~Q0 & ~Q1 & ~Q2);
+  assign K3 = (~Q0 & ~Q1 & ~Q2);
+  JK_FlipFlop_r ff3 (.J(J3), .K(K3), .CLK(enable_clk), .RESET(reset_condition), .Q(Q3));
+
+  assign J4 = (~Q0 & ~Q1 & ~Q2 & ~Q3);
+  assign K4 = (~Q0 & ~Q1 & ~Q2 & ~Q3);
+  JK_FlipFlop ff4 (.J(J4), .K(K4), .CLK(enable_clk), .RESET(reset_condition), .Q(Q4));
+
   assign number = {Q4, Q3, Q2, Q1, Q0};
-  assign number = (number > 5'b01010) ? 5'b01010 : number;
 endmodule
 module product_manager (
     input clock,
