@@ -6,33 +6,10 @@ module D_FlipFlop_Gates (
     output wire Qn
 );
   assign Qn = ~Q;
+
   always @(posedge CLK or posedge RESET) begin
     if (RESET) Q <= 0;
     else Q <= D;
-  end
-endmodule
-module JK_FlipFlop (
-    input  wire J,
-    input  wire K,
-    input  wire CLK,
-    input  wire RESET,
-    output reg  Q
-);
-  always @(posedge CLK or posedge RESET) begin
-    if (RESET) Q <= 0;
-    else Q <= (J & ~Q) | (~K & Q);
-  end
-endmodule
-module JK_FlipFlop_r (
-    input  wire J,
-    input  wire K,
-    input  wire CLK,
-    input  wire RESET,
-    output reg  Q
-);
-  always @(posedge CLK or posedge RESET) begin
-    if (RESET) Q <= 1;
-    else Q <= (J & ~Q) | (~K & Q);
   end
 endmodule
 module Counter (
@@ -77,31 +54,6 @@ module Counter (
     else if (enable) next_number <= next_number + 1;
   end
   assign number = next_number;
-
-
-  // wire Q0, Q1, Q2, Q3;
-  // wire J0, K0, J1, K1, J2, K2, J3, K3;
-  // wire enable_clk;
-
-  // assign enable_clk = clock & enable;
-
-  // assign J0 = 1;
-  // assign K0 = 1;
-  // JK_FlipFlop ff0 (.J(J0), .K(K0), .CLK(enable_clk), .RESET(reset), .Q(Q0));
-
-  // assign J1 = (Q0);
-  // assign K1 = (Q0);
-  // JK_FlipFlop ff1 (.J(J1), .K(K1), .CLK(enable_clk), .RESET(reset), .Q(Q1));
-  
-  // assign J2 = (Q0 & Q1);
-  // assign K2 = (Q0 & Q1);
-  // JK_FlipFlop ff2 (.J(J2), .K(K2), .CLK(enable_clk), .RESET(reset), .Q(Q2));
-  
-  // assign J3 = (Q0 & Q1 & Q2);
-  // assign K3 = (Q0 & Q1 & Q2);
-  // JK_FlipFlop ff3 (.J(J3), .K(K3), .CLK(enable_clk), .RESET(reset), .Q(Q3));
-  
-  // assign number = {Q3, Q2, Q1, Q0};
 endmodule
 module money_counter (
     input clock,
@@ -115,6 +67,7 @@ module money_counter (
     output reg error
 );
   wire [3:0] coin_500, coin_1000, coin_2000, cash_5000;
+
   Counter coin500 (
       .clock (clock),
       .reset (reset),
@@ -139,43 +92,46 @@ module money_counter (
       .enable(coin == 2'b11),
       .number(cash_5000)
   );
+
   assign count_500 = coin_500;
   assign count_1000 = coin_1000;
   assign count_2000 = coin_2000;
   assign count_5000 = cash_5000;
   assign total = (coin_500 * 5) + (coin_1000 * 10) + (coin_2000 * 20) + (cash_5000 * 50);
-  always @(coin) begin
+
+  always @(*) begin
     if (reset) error <= 0;
     else if (coin !== 2'b00 && coin !== 2'b01 && coin !== 2'b10 && coin !== 2'b11) begin
       error <= 1;
       $display("money is not supported");
-      $display("");
-    end else begin
-      error <= 0;
-    end
+    end else error <= 0;
   end
 endmodule
+
 module product_enable_generator (
     input [2:0] product_id,
     output reg [7:0] product_enable
 );
-  always @(product_id) begin
+  always @(*) begin
     product_enable = 8'b00000000;
     product_enable[product_id] = 1;
   end
 endmodule
+
 module comparator_5 (
     input [4:0] in_stock_amount,
     output less_than_5
 );
   assign less_than_5 = (in_stock_amount < 5'b00101);
 endmodule
+
 module comparator_10 (
     input [3:0] product_count,
     output greater_than_10
 );
   assign greater_than_10 = (product_count > 4'b1010);
 endmodule
+
 module intelligent_discount (
     input  [15:0] real_amount,
     input  [ 3:0] product_count,
@@ -188,8 +144,8 @@ module intelligent_discount (
   );
   wire [15:0] multiplied_by_9;
   wire [15:0] divided_by_10;
-  assign multiplied_by_9 = real_amount * 9;
-  assign divided_by_10 = multiplied_by_9 / 10;
+  assign multiplied_by_9 = (real_amount << 3) + real_amount;
+  assign divided_by_10 = (multiplied_by_9 >> 3) + (multiplied_by_9 >> 4);
   assign discounted_amount = (greater_than_10) ? divided_by_10 : real_amount;
 endmodule
 
@@ -217,87 +173,11 @@ module increment_counter (
   end
 endmodule
 
-// module UpCounter (
-//     input wire CLK,
-//     input wire RESET,
-//     input wire enable,
-//     output wire [4:0] number
-// );
-//     wire Q0, Q1, Q2, Q3, Q4;
-//     wire J0, K0, J1, K1, J2, K2, J3, K3, J4, K4;
-//     wire enable_clk;
-//     wire reset_condition;
-
-//     assign enable_clk = CLK & enable;
-
-//     // Reset when RESET is high or number reaches 10 (01010)
-//     assign reset_condition = RESET | (number == 5'b01011);
-
-//     assign J0 = 1;
-//     assign K0 = 1;
-//     JK_FlipFlop ff0 (.J(J0), .K(K0), .CLK(enable_clk), .RESET(reset_condition), .Q(Q0));
-
-//     assign J1 = (Q0);
-//     assign K1 = (Q0);
-//     JK_FlipFlop ff1 (.J(J1), .K(K1), .CLK(enable_clk), .RESET(reset_condition), .Q(Q1));
-    
-//     assign J2 = (Q0 & Q1);
-//     assign K2 = (Q0 & Q1);
-//     JK_FlipFlop ff2 (.J(J2), .K(K2), .CLK(enable_clk), .RESET(reset_condition), .Q(Q2));
-    
-//     assign J3 = (Q0 & Q1 & Q2);
-//     assign K3 = (Q0 & Q1 & Q2);
-//     JK_FlipFlop ff3 (.J(J3), .K(K3), .CLK(enable_clk), .RESET(reset_condition), .Q(Q3));
-    
-//     assign J4 = (Q0 & Q1 & Q2 & Q3);
-//     assign K4 = (Q0 & Q1 & Q2 & Q3);
-//     JK_FlipFlop ff4 (.J(J4), .K(K4), .CLK(enable_clk), .RESET(reset_condition), .Q(Q4));
-    
-//     assign number = {Q4, Q3, Q2, Q1, Q0};
-
-// endmodule
-// module DownCounter (
-//     input wire CLK,
-//     input wire RESET,
-//     input wire enable,
-//     output wire [4:0] number
-// );
-//   wire Q0, Q1, Q2, Q3, Q4;
-//   wire J0, K0, J1, K1, J2, K2, J3, K3, J4, K4;
-//   wire enable_clk;
-//   assign enable_clk = CLK & enable;
-
-//   // Reset when RESET is high or number reaches 10 (01010)
-//   assign reset_condition = RESET | (number == 5'b11111);
-
-//   assign J0 = 1;
-//   assign K0 = 1;
-//   JK_FlipFlop ff0 (.J(J0), .K(K0), .CLK(enable_clk), .RESET(reset_condition), .Q(Q0));
-
-//   assign J1 = (~Q0);
-//   assign K1 = (~Q0);
-//   JK_FlipFlop_r ff1 (.J(J1), .K(K1), .CLK(enable_clk), .RESET(reset_condition), .Q(Q1));
-
-//   assign J2 = (~Q0 & ~Q1);
-//   assign K2 = (~Q0 & ~Q1);
-//   JK_FlipFlop ff2 (.J(J2), .K(K2), .CLK(enable_clk), .RESET(reset_condition), .Q(Q2));
-
-//   assign J3 = (~Q0 & ~Q1 & ~Q2);
-//   assign K3 = (~Q0 & ~Q1 & ~Q2);
-//   JK_FlipFlop_r ff3 (.J(J3), .K(K3), .CLK(enable_clk), .RESET(reset_condition), .Q(Q3));
-
-//   assign J4 = (~Q0 & ~Q1 & ~Q2 & ~Q3);
-//   assign K4 = (~Q0 & ~Q1 & ~Q2 & ~Q3);
-//   JK_FlipFlop ff4 (.J(J4), .K(K4), .CLK(enable_clk), .RESET(reset_condition), .Q(Q4));
-
-//   assign number = {Q4, Q3, Q2, Q1, Q0};
-// endmodule
 module product_manager (
     input clock,
     input reset,
     input [2:0] product_id,
     input didBuy,
-    input [15:0] total,
     input [3:0] quantity,
     output [4:0] in_stock_amount,
     output reg error,
@@ -312,7 +192,6 @@ module product_manager (
   reg [3:0] total_buy_count;
   parameter LOW_THRESHOLD = 5'b00101;
   parameter INITIAL_STOCK = 5'b01010;
-
   initial begin
     prices[0] = 10;
     prices[1] = 15;
@@ -322,10 +201,8 @@ module product_manager (
     prices[5] = 35;
     prices[6] = 40;
     prices[7] = 45;
-
     total_buy_count = 0;
     selected_products_total = 0;
-
     inventory[0] = INITIAL_STOCK;
     inventory[1] = INITIAL_STOCK;
     inventory[2] = INITIAL_STOCK;
@@ -334,18 +211,7 @@ module product_manager (
     inventory[5] = INITIAL_STOCK;
     inventory[6] = INITIAL_STOCK;
     inventory[7] = INITIAL_STOCK;
-
-    purchase_count[0] <= 0;
-    purchase_count[1] <= 0;
-    purchase_count[2] <= 0;
-    purchase_count[3] <= 0;
-    purchase_count[4] <= 0;
-    purchase_count[5] <= 0;
-    purchase_count[6] <= 0;
-    purchase_count[7] <= 0;
-
   end
-
   wire [7:0] product_enable;
   wire [4:0] decremented_inventory;
   wire [4:0] incremented_purchase_count;
@@ -357,11 +223,9 @@ module product_manager (
       .product_enable(product_enable)
   );
 
-  assign product_price   = prices[index];
-  assign in_stock_amount = inventory[index];
   logic [2:0] index;
 
-  always @(product_enable) begin
+  always @(*) begin
     case (product_enable)
       8'b00000001: index = 3'd0;
       8'b00000010: index = 3'd1;
@@ -374,29 +238,25 @@ module product_manager (
       default:     index = 3'dX;
     endcase
   end
+
   decrement_counter inventory_decrement (
-      .clock(clock),
-      .reset(reset),
+      .clock (clock),
+      .reset (reset),
       .enable(didBuy && inventory[index] > 0 && quantity > 0),
       .number(decremented_inventory)
   );
   increment_counter purchase_increment (
-      .clock(clock),
-      .reset(reset),
+      .clock (clock),
+      .reset (reset),
       .enable(didBuy && quantity > 0),
       .number(incremented_purchase_count)
   );
-
   comparator_5 compare_with_5 (
       .in_stock_amount(inventory[index]),
       .less_than_5(less_than_5)
   );
-
-  intelligent_discount discount_logic (
-      .real_amount(selected_products_total),
-      .product_count(total_buy_count),
-      .discounted_amount(discounted_total)
-  );
+  assign product_price   = prices[index];
+  assign in_stock_amount = inventory[index];
 
   always @(*) begin
     if (reset) error <= 0;
@@ -409,28 +269,49 @@ module product_manager (
     end
   end
 
-  always @(didBuy) begin
-    if (didBuy && inventory[index] > 0) begin
+  always @(posedge clock or posedge reset) begin
+    if (reset) begin
+      total_buy_count <= 0;
+      selected_products_total <= 0;
+      purchase_count[0] <= 0;
+      purchase_count[1] <= 0;
+      purchase_count[2] <= 0;
+      purchase_count[3] <= 0;
+      purchase_count[4] <= 0;
+      purchase_count[5] <= 0;
+      purchase_count[6] <= 0;
+      purchase_count[7] <= 0;
+      total_price <= 0;
+    end else if (didBuy && inventory[index] > 0) begin
       total_buy_count <= total_buy_count + quantity;
-      selected_products_total <= selected_products_total + (prices[index]);
-      inventory[index] <= decremented_inventory;
-      purchase_count[index] <= incremented_purchase_count;
-      product_purchase_count <= incremented_purchase_count;
+      selected_products_total <= selected_products_total + (prices[index] * quantity);
     end
   end
-  always @(discounted_total) begin
+  intelligent_discount discount_logic (
+      .real_amount(selected_products_total),
+      .product_count(total_buy_count),
+      .discounted_amount(discounted_total)
+  );
+  always @(*) begin
     total_price = discounted_total;
+    inventory[index] <= decremented_inventory;
+    purchase_count[index] <= incremented_purchase_count;
+    product_purchase_count <= incremented_purchase_count;
   end
 endmodule
+
 module fsm (
     input clock,
     input reset,
     input money_validation,
     input is_product_selected,
     input is_enough_money,
-    output reg [1:0] state
+    output reg [1:0] state,
+    output reg enable_payment,
+    output reg enable_dispense
 );
   parameter IDLE = 2'b00, SELECT = 2'b01, PAY = 2'b10, DISPENSE = 2'b11;
+
   reg  [1:0] state_next;
   wire [1:0] state_reg;
   D_FlipFlop_Gates state_dff_0 (
@@ -447,11 +328,13 @@ module fsm (
       .Q(state_reg[1]),
       .Qn()
   );
-  always @(posedge clock or posedge reset or state_reg) begin
+
+  always @(posedge clock or posedge reset) begin
     if (reset) state <= IDLE;
     else state <= state_reg;
   end
-  always @(state or money_validation or is_product_selected or is_enough_money) begin
+
+  always @(*) begin
     case (state)
       IDLE: begin
         if (money_validation) state_next = SELECT;
@@ -469,7 +352,13 @@ module fsm (
       default:  state_next = IDLE;
     endcase
   end
+
+  always @(*) begin
+    enable_payment  = (state == PAY);
+    enable_dispense = (state == DISPENSE);
+  end
 endmodule
+
 module feedback_storage (
     input clock,
     input reset,
@@ -498,11 +387,8 @@ module feedback_storage (
       stored_feedback[7] <= 3'b000;
     end else if (feedback >= 3'b001 && feedback <= 3'b101 && product_id < 8) begin
       stored_feedback[product_id] <= feedback;
-    end else begin
-      stored_feedback[product_id] <= stored_feedback[product_id];
     end
   end
-
   assign stored_feedback_0 = stored_feedback[0];
   assign stored_feedback_1 = stored_feedback[1];
   assign stored_feedback_2 = stored_feedback[2];
@@ -519,6 +405,7 @@ module feedback_storage (
     end else error <= 0;
   end
 endmodule
+
 module display (
     input [15:0] total_money,
     input [ 7:0] product_price,
@@ -584,6 +471,7 @@ module display (
     $display("");
   end
 endmodule
+
 module tb;
   reg clock;
   reg reset;
@@ -603,6 +491,8 @@ module tb;
   reg is_product_selected;
   reg is_enough_money;
   wire [1:0] state;
+  wire enable_payment;
+  wire enable_dispense;
   reg [2:0] feedback;
   wire [2:0] stored_feedback_0, stored_feedback_1, stored_feedback_2, stored_feedback_3;
   wire [2:0] stored_feedback_4, stored_feedback_5, stored_feedback_6, stored_feedback_7;
@@ -636,7 +526,9 @@ module tb;
       .money_validation(money_validation),
       .is_product_selected(is_product_selected),
       .is_enough_money(is_enough_money),
-      .state(state)
+      .state(state),
+      .enable_payment(enable_payment),
+      .enable_dispense(enable_dispense)
   );
   feedback_storage feedback_storage_inst (
       .clock(clock),
@@ -660,20 +552,7 @@ module tb;
       .fsm_state(state),
       .product_id(product_id),
       .product_count(in_stock_amount),
-      .product_purchase_count(product_purchase_count),
-      .count_500(count_500),
-      .count_1000(count_1000),
-      .count_2000(count_2000),
-      .count_5000(count_5000),
-      .quantity(quantity),
-      .stored_feedback_0(stored_feedback_0),
-      .stored_feedback_1(stored_feedback_1),
-      .stored_feedback_2(stored_feedback_2),
-      .stored_feedback_3(stored_feedback_3),
-      .stored_feedback_4(stored_feedback_4),
-      .stored_feedback_5(stored_feedback_5),
-      .stored_feedback_6(stored_feedback_6),
-      .stored_feedback_7(stored_feedback_7)
+      .product_purchase_count(product_purchase_count)
   );
   always begin
     #5 clock = ~clock;
@@ -681,32 +560,70 @@ module tb;
   initial begin
     clock = 0;
     reset = 0;
-    #10 reset = 1;
-    #10 reset = 0;
+
+    reset = 1;
+    #10;
+    reset = 0;
+
     $display("Phase 1: Inserting coins...");
-    $display("");
-    #10 coin = 2'b00;
-    #10 coin = 2'b00;
-    #10 coin = 2'b01;
-    #10 coin = 2'b10;
-    #10 coin = 2'b11;
-    #10 coin = 2'bxx;
-    #10 money_validation = 1;
-    #10 money_validation = 0;
-    $display("Phase 2: Adding Products...");
-    $display("");
-    #10 product_id = 3'b001;
-    #10 quantity = 4'b0001;
-    #10 is_product_selected = 1;
-    #10 is_product_selected = 0;
-    #10 didBuy = 1;
-    #10 didBuy = 0;
-    $display("Phase 3: feedback");
-    $display("");
-    #10 feedback = 3'b010;
-    #10 feedback = 3'b110;
-    #10 is_enough_money = 1;
-    #10 is_enough_money = 0;
+    coin = 2'b00;
+    #10;
+    coin = 2'b00;
+    #10;
+    coin = 2'b01;
+    #10;
+    coin = 2'b10;
+    #10;
+    coin = 2'b11;
+    #10;
+    coin = 2'bxx;
+    #10;
+
+    money_validation = 1;
+    #10;
+    money_validation = 0;
+    #10;
+    $display("Testing Discount - Adding Products...");
+    product_id = 3'b001;
+    #10;
+    quantity = 4'b0001;
+    #10;
+
+    is_product_selected = 1;
+    #10;
+    is_product_selected = 0;
+    #10;
+
+    didBuy = 1;
+    #10;
+    didBuy = 0;
+    #10;
+    didBuy = 1;
+    #10;
+    didBuy = 0;
+    #10;
+    didBuy = 1;
+    #10;
+    didBuy = 0;
+    #10;
+    didBuy = 1;
+    #10;
+    didBuy = 0;
+    #10;
+    didBuy = 1;
+    #10;
+    didBuy = 0;
+    #10;
+    $display("Testing feedback");
+    feedback = 3'b001;
+    #10;
+    feedback = 3'b111;
+    #10;
+
+    is_enough_money = 1;
+    #10;
+    is_enough_money = 0;
+    #10;
     $finish;
   end
 endmodule
