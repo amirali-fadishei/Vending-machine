@@ -54,7 +54,32 @@ module Counter (
     else if (enable) next_number <= next_number + 1;
   end
   assign number = next_number;
+
+  // wire Q0, Q1, Q2, Q3;
+  // wire J0, K0, J1, K1, J2, K2, J3, K3;
+  // wire enable_clk;
+
+  // assign enable_clk = clock & enable;
+
+  // assign J0 = 1;
+  // assign K0 = 1;
+  // JK_FlipFlop ff0 (.J(J0), .K(K0), .CLK(enable_clk), .RESET(reset), .Q(Q0));
+
+  // assign J1 = (Q0);
+  // assign K1 = (Q0);
+  // JK_FlipFlop ff1 (.J(J1), .K(K1), .CLK(enable_clk), .RESET(reset), .Q(Q1));
+  
+  // assign J2 = (Q0 & Q1);
+  // assign K2 = (Q0 & Q1);
+  // JK_FlipFlop ff2 (.J(J2), .K(K2), .CLK(enable_clk), .RESET(reset), .Q(Q2));
+  
+  // assign J3 = (Q0 & Q1 & Q2);
+  // assign K3 = (Q0 & Q1 & Q2);
+  // JK_FlipFlop ff3 (.J(J3), .K(K3), .CLK(enable_clk), .RESET(reset), .Q(Q3));
+  
+  // assign number = {Q3, Q2, Q1, Q0};
 endmodule
+
 module money_counter (
     input clock,
     input reset,
@@ -99,7 +124,7 @@ module money_counter (
   assign count_5000 = cash_5000;
   assign total = (coin_500 * 5) + (coin_1000 * 10) + (coin_2000 * 20) + (cash_5000 * 50);
 
-  always @(*) begin
+  always @(coin) begin
     if (reset) error <= 0;
     else if (coin !== 2'b00 && coin !== 2'b01 && coin !== 2'b10 && coin !== 2'b11) begin
       error <= 1;
@@ -137,16 +162,16 @@ module intelligent_discount (
     input  [ 3:0] product_count,
     output [15:0] discounted_amount
 );
-  wire greater_than_10;
+  wire is_greater_than_10;
   comparator_10 cmp (
-      .product_count  (product_count),
-      .greater_than_10(greater_than_10)
+      .product_count(product_count),
+      .is_greater_than_10(is_greater_than_10)
   );
   wire [15:0] multiplied_by_9;
   wire [15:0] divided_by_10;
   assign multiplied_by_9 = (real_amount << 3) + real_amount;
   assign divided_by_10 = (multiplied_by_9 >> 3) + (multiplied_by_9 >> 4);
-  assign discounted_amount = (greater_than_10) ? divided_by_10 : real_amount;
+  assign discounted_amount = (is_greater_than_10) ? divided_by_10 : real_amount;
 endmodule
 
 module decrement_counter (
