@@ -78,7 +78,6 @@ module Counter (
   end
   assign number = next_number;
 
-
   // wire Q0, Q1, Q2, Q3;
   // wire J0, K0, J1, K1, J2, K2, J3, K3;
   // wire enable_clk;
@@ -103,6 +102,7 @@ module Counter (
   
   // assign number = {Q3, Q2, Q1, Q0};
 endmodule
+
 module money_counter (
     input clock,
     input reset,
@@ -115,6 +115,7 @@ module money_counter (
     output reg error
 );
   wire [3:0] coin_500, coin_1000, coin_2000, cash_5000;
+
   Counter coin500 (
       .clock (clock),
       .reset (reset),
@@ -139,22 +140,22 @@ module money_counter (
       .enable(coin == 2'b11),
       .number(cash_5000)
   );
+
   assign count_500 = coin_500;
   assign count_1000 = coin_1000;
   assign count_2000 = coin_2000;
   assign count_5000 = cash_5000;
   assign total = (coin_500 * 5) + (coin_1000 * 10) + (coin_2000 * 20) + (cash_5000 * 50);
+
   always @(coin) begin
     if (reset) error <= 0;
     else if (coin !== 2'b00 && coin !== 2'b01 && coin !== 2'b10 && coin !== 2'b11) begin
       error <= 1;
       $display("money is not supported");
-      $display("");
-    end else begin
-      error <= 0;
-    end
+    end else error <= 0;
   end
 endmodule
+
 module product_enable_generator (
     input [2:0] product_id,
     output reg [7:0] product_enable
@@ -164,33 +165,36 @@ module product_enable_generator (
     product_enable[product_id] = 1;
   end
 endmodule
+
 module comparator_5 (
     input [4:0] in_stock_amount,
     output less_than_5
 );
   assign less_than_5 = (in_stock_amount < 5'b00101);
 endmodule
+
 module comparator_10 (
     input [3:0] product_count,
     output greater_than_10
 );
   assign greater_than_10 = (product_count > 4'b1010);
 endmodule
+
 module intelligent_discount (
     input  [15:0] real_amount,
     input  [ 3:0] product_count,
     output [15:0] discounted_amount
 );
-  wire greater_than_10;
+  wire is_greater_than_10;
   comparator_10 cmp (
-      .product_count  (product_count),
-      .greater_than_10(greater_than_10)
+      .product_count(product_count),
+      .is_greater_than_10(is_greater_than_10)
   );
   wire [15:0] multiplied_by_9;
   wire [15:0] divided_by_10;
-  assign multiplied_by_9 = real_amount * 9;
-  assign divided_by_10 = multiplied_by_9 / 10;
-  assign discounted_amount = (greater_than_10) ? divided_by_10 : real_amount;
+  assign multiplied_by_9 = (real_amount << 3) + real_amount;
+  assign divided_by_10 = (multiplied_by_9 >> 3) + (multiplied_by_9 >> 4);
+  assign discounted_amount = (is_greater_than_10) ? divided_by_10 : real_amount;
 endmodule
 
 module decrement_counter (
@@ -701,12 +705,12 @@ module tb;
     #10 is_product_selected = 0;
     #10 didBuy = 1;
     #10 didBuy = 0;
-    $display("Phase 3: feedback");
-    $display("");
-    #10 feedback = 3'b010;
-    #10 feedback = 3'b110;
-    #10 is_enough_money = 1;
-    #10 is_enough_money = 0;
+    // $display("Phase 3: feedback");
+    // $display("");
+    // #10 feedback = 3'b010;
+    // #10 feedback = 3'b110;
+    // #10 is_enough_money = 1;
+    // #10 is_enough_money = 0;
     $finish;
   end
 endmodule
