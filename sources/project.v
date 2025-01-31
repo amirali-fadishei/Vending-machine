@@ -1,3 +1,132 @@
+//comment
+
+// module DownCounter (
+//     input wire CLK,
+//     input wire RESET,
+//     input wire enable,
+//     output wire [4:0] number
+// );
+//   wire Q0, Q1, Q2, Q3, Q4;
+//   wire J0, K0, J1, K1, J2, K2, J3, K3, J4, K4;
+//   wire enable_clk;
+//   assign enable_clk = CLK & enable;
+//   reg [4:0] next_number;
+
+//   // Reset when RESET is high or number reaches 10 (01010)
+//   assign reset_condition = RESET | (number == 5'b11111);
+
+//   assign J0 = 1;
+//   assign K0 = 1;
+//   JK_FlipFlop ff0 (.J(J0), .K(K0), .CLK(enable_clk), .RESET(reset_condition), .Q(Q0));
+
+//   assign J1 = (~Q0);
+//   assign K1 = (~Q0);
+//   JK_FlipFlop_r ff1 (.J(J1), .K(K1), .CLK(enable_clk), .RESET(reset_condition), .Q(Q1));
+
+//   assign J2 = (~Q0 & ~Q1);
+//   assign K2 = (~Q0 & ~Q1);
+//   JK_FlipFlop ff2 (.J(J2), .K(K2), .CLK(enable_clk), .RESET(reset_condition), .Q(Q2));
+
+//   assign J3 = (~Q0 & ~Q1 & ~Q2);
+//   assign K3 = (~Q0 & ~Q1 & ~Q2);
+//   JK_FlipFlop_r ff3 (.J(J3), .K(K3), .CLK(enable_clk), .RESET(reset_condition), .Q(Q3));
+
+//   assign J4 = (~Q0 & ~Q1 & ~Q2 & ~Q3);
+//   assign K4 = (~Q0 & ~Q1 & ~Q2 & ~Q3);
+//   JK_FlipFlop ff4 (.J(J4), .K(K4), .CLK(enable_clk), .RESET(reset_condition), .Q(Q4));
+
+
+//   always @(posedge CLK or posedge RESET) begin
+//     if (reset_condition)
+//       next_number <= 5'b01010;  
+//     else
+//       next_number <= {Q4, Q3, Q2, Q1, Q0};
+//   end
+
+//   assign number = next_number;
+// endmodule
+
+// module UpCounter (
+//     input wire CLK,
+//     input wire RESET,
+//     input wire enable,
+//     output wire [4:0] number
+// );
+//     wire Q0, Q1, Q2, Q3, Q4;
+//     wire J0, K0, J1, K1, J2, K2, J3, K3, J4, K4;
+//     wire enable_clk;
+//     wire reset_condition;
+//     reg [4:0] next_number;
+
+//     assign enable_clk = CLK & enable;
+
+//     // Reset when RESET is high or number reaches 10 (01010)
+//     assign reset_condition = RESET | (number == 5'b01011);
+
+//     assign J0 = 1;
+//     assign K0 = 1;
+//     JK_FlipFlop ff0 (.J(J0), .K(K0), .CLK(enable_clk), .RESET(reset_condition), .Q(Q0));
+
+//     assign J1 = (Q0);
+//     assign K1 = (Q0);
+//     JK_FlipFlop ff1 (.J(J1), .K(K1), .CLK(enable_clk), .RESET(reset_condition), .Q(Q1));
+
+//     assign J2 = (Q0 & Q1);
+//     assign K2 = (Q0 & Q1);
+//     JK_FlipFlop ff2 (.J(J2), .K(K2), .CLK(enable_clk), .RESET(reset_condition), .Q(Q2));
+
+//     assign J3 = (Q0 & Q1 & Q2);
+//     assign K3 = (Q0 & Q1 & Q2);
+//     JK_FlipFlop ff3 (.J(J3), .K(K3), .CLK(enable_clk), .RESET(reset_condition), .Q(Q3));
+
+//     assign J4 = (Q0 & Q1 & Q2 & Q3);
+//     assign K4 = (Q0 & Q1 & Q2 & Q3);
+//     JK_FlipFlop ff4 (.J(J4), .K(K4), .CLK(enable_clk), .RESET(reset_condition), .Q(Q4));
+
+
+//     always @(posedge CLK or posedge RESET) begin
+//     if (reset_condition)
+//       next_number <= 5'b00000;
+//     else
+//       next_number <= {Q4, Q3, Q2, Q1, Q0};
+//   end
+
+//   assign number = next_number; 
+
+// endmodule
+
+// decrement_counter inventory_decrement (
+//     .clock(clock),
+//     .reset(reset),
+//     .Quantity(quantity),
+//     .enable(didBuy && inventory[index] > 0 && quantity > 0),
+//     .number(decremented_inventory)
+// );
+
+// increment_counter purchase_increment (
+//     .clock(clock),
+//     .reset(reset),
+//     .Quantity(quantity),
+//     .enable(didBuy && quantity > 0),
+//     .number(incremented_purchase_count)
+// );
+
+// DownCounter inventory_decrement (
+//     .CLK (clock),
+//     .RESET (reset),
+//     .enable(didBuy && inventory[index] > 0 && quantity > 0),
+//     .number(decremented_inventory)
+// );
+// UpCounter purchase_increment (
+//     .CLK (clock),
+//     .RESET (reset),
+//     .enable(didBuy && quantity > 0),
+//     .number(incremented_purchase_count)
+// );
+
+//
+
+
 module D_FlipFlop_Gates (
     input  wire D,
     input  wire CLK,
@@ -12,72 +141,74 @@ module D_FlipFlop_Gates (
     else Q <= D;
   end
 endmodule
+module JK_FlipFlop (
+    input  wire J,
+    input  wire K,
+    input  wire CLK,
+    input  wire RESET,
+    output reg  Q
+);
+  always @(posedge CLK or posedge RESET) begin
+    if (RESET) Q <= 0;
+    else Q <= (J & ~Q) | (~K & Q);
+  end
+endmodule
 module Counter (
     input clock,
     input reset,
     input enable,
-    output [3:0] number
+    output reg [3:0] number
 );
-  reg  [3:0] next_number;
-  wire [3:0] Q;
-  wire [3:0] Qn;
-  D_FlipFlop_Gates DFF0 (
-      .D(next_number[0]),
-      .CLK(clock),
+  wire Q0, Q1, Q2, Q3;
+  wire J0, K0, J1, K1, J2, K2, J3, K3;
+  wire enable_clk;
+
+  assign enable_clk = clock & enable;
+
+  assign J0 = 1;
+  assign K0 = 1;
+  JK_FlipFlop ff0 (
+      .J(J0),
+      .K(K0),
+      .CLK(enable_clk),
       .RESET(reset),
-      .Q(Q[0]),
-      .Qn(Qn[0])
+      .Q(Q0)
   );
-  D_FlipFlop_Gates DFF1 (
-      .D(next_number[1]),
-      .CLK(clock),
+
+  assign J1 = Q0;
+  assign K1 = Q0;
+  JK_FlipFlop ff1 (
+      .J(J1),
+      .K(K1),
+      .CLK(enable_clk),
       .RESET(reset),
-      .Q(Q[1]),
-      .Qn(Qn[1])
+      .Q(Q1)
   );
-  D_FlipFlop_Gates DFF2 (
-      .D(next_number[2]),
-      .CLK(clock),
+
+  assign J2 = Q0 & Q1;
+  assign K2 = Q0 & Q1;
+  JK_FlipFlop ff2 (
+      .J(J2),
+      .K(K2),
+      .CLK(enable_clk),
       .RESET(reset),
-      .Q(Q[2]),
-      .Qn(Qn[2])
+      .Q(Q2)
   );
-  D_FlipFlop_Gates DFF3 (
-      .D(next_number[3]),
-      .CLK(clock),
+
+  assign J3 = Q0 & Q1 & Q2;
+  assign K3 = Q0 & Q1 & Q2;
+  JK_FlipFlop ff3 (
+      .J(J3),
+      .K(K3),
+      .CLK(enable_clk),
       .RESET(reset),
-      .Q(Q[3]),
-      .Qn(Qn[3])
+      .Q(Q3)
   );
+
   always @(posedge clock or posedge reset) begin
-    if (reset) next_number <= 4'b0000;
-    else if (enable) next_number <= next_number + 1;
+    if (reset) number <= 4'b0000;
+    else number <= {Q3, Q2, Q1, Q0};
   end
-  assign number = next_number;
-
-  // wire Q0, Q1, Q2, Q3;
-  // wire J0, K0, J1, K1, J2, K2, J3, K3;
-  // wire enable_clk;
-
-  // assign enable_clk = clock & enable;
-
-  // assign J0 = 1;
-  // assign K0 = 1;
-  // JK_FlipFlop ff0 (.J(J0), .K(K0), .CLK(enable_clk), .RESET(reset), .Q(Q0));
-
-  // assign J1 = (Q0);
-  // assign K1 = (Q0);
-  // JK_FlipFlop ff1 (.J(J1), .K(K1), .CLK(enable_clk), .RESET(reset), .Q(Q1));
-
-  // assign J2 = (Q0 & Q1);
-  // assign K2 = (Q0 & Q1);
-  // JK_FlipFlop ff2 (.J(J2), .K(K2), .CLK(enable_clk), .RESET(reset), .Q(Q2));
-
-  // assign J3 = (Q0 & Q1 & Q2);
-  // assign K3 = (Q0 & Q1 & Q2);
-  // JK_FlipFlop ff3 (.J(J3), .K(K3), .CLK(enable_clk), .RESET(reset), .Q(Q3));
-
-  // assign number = {Q3, Q2, Q1, Q0};
 endmodule
 module money_counter (
     input clock,
@@ -195,6 +326,7 @@ module product_manager (
     input clock,
     input reset,
     input didBuy,
+    input [15:0] total_money,
     input [2:0] product_id,
     input [3:0] quantity,
     output [4:0] in_stock_amount,
@@ -311,6 +443,9 @@ module product_manager (
 
   always @(discounted_total) begin
     total_price = discounted_total;
+    case (total_price > total_money)
+      1: $display("money is not enough");
+    endcase
     inventory[index] <= decremented_inventory;
     purchase_count[index] <= incremented_purchase_count;
     product_purchase_count <= incremented_purchase_count;
@@ -541,6 +676,7 @@ module testbench;
   product_manager p_manager (
       .clock(clock),
       .reset(reset),
+      .total_money(total),
       .didBuy(didBuy),
       .product_id(product_id),
       .quantity(quantity),
@@ -617,7 +753,7 @@ module testbench;
 
     #10 is_product_selected = 1;
     #10 product_id = 3'b001;
-    #10 quantity = 4'b0110;
+    #10 quantity = 4'b0100;
 
     #10 didBuy = 1;
     #10 didBuy = 0;
